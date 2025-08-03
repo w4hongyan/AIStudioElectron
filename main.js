@@ -97,13 +97,13 @@ ipcMain.handle('image:process', async (event, { files, task, options }) => {
       let sharpInstance = sharp(filePath);
 
       if (task === 'compress') {
-        outputPath = path.join(dir, `${name}-compressed.jpg`);
+        outputPath = pathModule.join(dir, `${name}-compressed.jpg`);
         await sharpInstance.jpeg({ quality: Math.round(options.quality * 100) }).toFile(outputPath);
       } else if (task === 'convert') {
-        outputPath = path.join(dir, `${name}-converted.${options.format}`);
+        outputPath = pathModule.join(dir, `${name}-converted.${options.format}`);
         await sharpInstance.toFormat(options.format).toFile(outputPath);
       } else if (task === 'watermark') {
-        outputPath = path.join(dir, `${name}-watermarked${ext}`);
+        outputPath = pathModule.join(dir, `${name}-watermarked${ext}`);
         const watermarkBuffer = await sharp(options.watermarkPath).ensureAlpha(options.options.opacity).toBuffer();
         await sharpInstance.composite([{ input: watermarkBuffer, gravity: options.options.position }]).toFile(outputPath);
       }
@@ -141,13 +141,13 @@ ipcMain.handle('video:process', async (event, { files, task, options }) => {
       let ffmpegCommand = ffmpeg(filePath);
 
       if (task === 'convert') {
-        outputPath = path.join(dir, `${name}-converted.${options.format}`);
+        outputPath = pathModule.join(dir, `${name}-converted.${options.format}`);
         ffmpegCommand.toFormat(options.format);
       } else if (task === 'extract') {
-        outputPath = path.join(dir, `${name}-audio.${options.format}`);
+        outputPath = pathModule.join(dir, `${name}-audio.${options.format}`);
         ffmpegCommand.noVideo();
       } else if (task === 'compress') {
-        outputPath = path.join(dir, `${name}-compressed.mp4`);
+        outputPath = pathModule.join(dir, `${name}-compressed.mp4`);
         ffmpegCommand.size(options.resolution);
       }
 

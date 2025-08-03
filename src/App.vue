@@ -40,6 +40,22 @@
             <el-icon><Scissor /></el-icon>
             <template #title>自动混剪</template>
           </el-menu-item>
+          <el-menu-item index="cover-designer">
+            <el-icon><Picture /></el-icon>
+            <template #title>封面设计</template>
+          </el-menu-item>
+          <el-menu-item index="video-editor">
+            <el-icon><VideoCamera /></el-icon>
+            <template #title>视频剪辑</template>
+          </el-menu-item>
+          <el-menu-item index="voice-synthesizer">
+            <el-icon><Microphone /></el-icon>
+            <template #title>语音合成</template>
+          </el-menu-item>
+          <el-menu-item index="platform-publisher">
+            <el-icon><Upload /></el-icon>
+            <template #title>平台发布</template>
+          </el-menu-item>
           <el-menu-item index="plugin-market">
             <el-icon><Grid /></el-icon>
             <template #title>插件市场</template>
@@ -79,13 +95,18 @@ import {
   Grid, 
   Expand, 
   Fold, 
-  MagicStick 
+  MagicStick,
+  Upload 
 } from '@element-plus/icons-vue';
 import AiScriptWriter from './components/AiScriptWriter.vue';
 import ImageTools from './components/ImageTools.vue';
 import VideoTools from './components/VideoTools.vue';
 import AudioTools from './components/AudioTools.vue';
 import AutoEditor from './components/AutoEditor.vue';
+import CoverDesigner from './components/CoverDesigner.vue';
+import VideoEditor from './components/VideoEditor.vue';
+import VoiceSynthesizer from './components/VoiceSynthesizer.vue';
+import PlatformPublisher from './components/PlatformPublisher.vue';
 
 // --- State for Collapsible Sidebar ---
 const isCollapsed = ref(false);
@@ -110,6 +131,10 @@ const componentMap = {
   'video-tools': VideoTools,
   'audio-tools': AudioTools,
   'auto-editor': AutoEditor,
+  'cover-designer': CoverDesigner,
+  'video-editor': VideoEditor,
+  'voice-synthesizer': VoiceSynthesizer,
+  'platform-publisher': PlatformPublisher,
   'strategy-management': PlaceholderComponent,
   'plugin-market': PlaceholderComponent,
 };
