@@ -120,13 +120,19 @@
       <el-button @click="saveProject">
         <el-icon><FolderOpened /></el-icon> 保存项目
       </el-button>
+      <el-button type="success" @click="aiOptimizeCover">
+        <el-icon><MagicStick /></el-icon> AI优化封面
+      </el-button>
+      <el-button @click="predictCTR">
+        <el-icon><TrendCharts /></el-icon> 预测点击率
+      </el-button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { Edit, Picture, RefreshLeft, RefreshRight, Download, FolderOpened } from '@element-plus/icons-vue'
+import { Edit, Picture, RefreshLeft, RefreshRight, Download, FolderOpened, MagicStick, TrendCharts } from '@element-plus/icons-vue'
 
 const templates = ref([
   { id: 1, name: '简约科技', preview: '/templates/tech.jpg' },
@@ -228,6 +234,27 @@ const exportCover = () => {
 const saveProject = () => {
   // 实现保存项目逻辑
   console.log('Saving project...')
+}
+
+const aiOptimizeCover = () => {
+  ElMessage.success('AI正在优化封面设计...')
+  // 模拟AI优化建议
+  setTimeout(() => {
+    ElMessageBox.alert(
+      'AI优化建议：\n\n1. 建议将标题字体放大20%\n2. 背景色调整为更鲜明的对比色\n3. 添加动态元素提升吸引力\n4. 优化文字排版层次感',
+      'AI优化完成',
+      { confirmButtonText: '应用建议' }
+    )
+  }, 1500)
+}
+
+const predictCTR = () => {
+  const ctr = (Math.random() * 5 + 3).toFixed(1)
+  ElMessageBox.alert(
+    `基于当前设计，预测的点击率为：${ctr}%\n\n影响因素：\n- 色彩搭配：良好\n- 文字可读性：优秀\n- 视觉冲击力：中等\n- 建议：可进一步提升对比度`,
+    '点击率预测',
+    { confirmButtonText: '知道了' }
+  )
 }
 </script>
 

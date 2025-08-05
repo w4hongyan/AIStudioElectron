@@ -61,10 +61,28 @@
             </el-button>
           </div>
 
-          <!-- 步骤9：原音控制 -->
+          <!-- 步骤7：原音控制 -->
           <div class="config-section">
-            <h3>9️⃣ 原音控制</h3>
+            <h3>7️⃣ 原音控制</h3>
             <el-switch v-model="keepOriginalAudio" active-text="保留原音" inactive-text="关闭原音" />
+          </div>
+
+          <!-- 步骤8：保存模板 -->
+          <div class="config-section">
+            <h3>8️⃣ 保存模板</h3>
+            <el-button @click="saveTemplate" type="warning" plain style="width: 100%">
+              <el-icon><Document /></el-icon>
+              保存当前配置为模板
+            </el-button>
+            <el-select 
+              v-if="templates.length > 0" 
+              v-model="selectedTemplate" 
+              placeholder="选择已保存模板"
+              style="width: 100%; margin-top: 8px"
+              @change="loadTemplate"
+            >
+              <el-option v-for="template in templates" :key="template.name" :label="template.name" :value="template.name" />
+            </el-select>
           </div>
 
           <!-- 开始处理按钮 -->
@@ -182,6 +200,8 @@ const materialStats = ref({});
 const materialFiles = ref({});
 const scriptContent = ref({});
 const bgMusicCount = ref(0);
+const templates = ref([]);
+const selectedTemplate = ref('');
 
 // 计算属性
 const canStartProcessing = computed(() => {
@@ -302,6 +322,45 @@ const refreshPreview = () => {
   if (scriptPath.value) scanScripts();
 };
 
+const saveTemplate = () => {
+  const templateName = prompt('请输入模板名称:', `模板_${new Date().toLocaleDateString()}`);
+  if (!templateName) return;
+
+  const template = {
+    name: templateName,
+    selectedAnchor: selectedAnchor.value,
+    playbackSpeed: playbackSpeed.value,
+    folderConfigs: folderConfigs.value,
+    keepOriginalAudio: keepOriginalAudio.value,
+    timestamp: new Date().toISOString()
+  };
+
+  const existingTemplates = JSON.parse(localStorage.getItem('autoEditorTemplates') || '[]');
+  existingTemplates.unshift(template);
+  
+  // 最多保存10个模板
+  if (existingTemplates.length > 10) {
+    existingTemplates.splice(10);
+  }
+
+  localStorage.setItem('autoEditorTemplates', JSON.stringify(existingTemplates));
+  templates.value = existingTemplates;
+  ElMessage.success('模板保存成功！');
+};
+
+const loadTemplate = (templateName) => {
+  const existingTemplates = JSON.parse(localStorage.getItem('autoEditorTemplates') || '[]');
+  const template = existingTemplates.find(t => t.name === templateName);
+  
+  if (template) {
+    selectedAnchor.value = template.selectedAnchor;
+    playbackSpeed.value = template.playbackSpeed;
+    folderConfigs.value = template.folderConfigs;
+    keepOriginalAudio.value = template.keepOriginalAudio;
+    ElMessage.success(`已加载模板: ${templateName}`);
+  }
+};
+
 const setupAutoProgress = () => {
   window.electronAPI.onAutoProgress(({ progress, step }) => {
     processingProgress.value = progress;
@@ -311,6 +370,10 @@ const setupAutoProgress = () => {
 
 onMounted(() => {
   setupAutoProgress();
+  
+  // 加载保存的模板
+  const savedTemplates = JSON.parse(localStorage.getItem('autoEditorTemplates') || '[]');
+  templates.value = savedTemplates;
 });
 
 onBeforeUnmount(() => {

@@ -56,6 +56,14 @@
             <el-icon><Upload /></el-icon>
             <template #title>平台发布</template>
           </el-menu-item>
+          <el-menu-item index="ai-image-generator">
+            <el-icon><Picture /></el-icon>
+            <template #title>AI 视觉</template>
+          </el-menu-item>
+          <el-menu-item index="hot-tracker">
+            <el-icon><TrendCharts /></el-icon>
+            <template #title>热点追踪</template>
+          </el-menu-item>
           <el-menu-item index="plugin-market">
             <el-icon><Grid /></el-icon>
             <template #title>插件市场</template>
@@ -96,7 +104,8 @@ import {
   Expand, 
   Fold, 
   MagicStick,
-  Upload 
+  Upload,
+  TrendCharts
 } from '@element-plus/icons-vue';
 import AiScriptWriter from './components/AiScriptWriter.vue';
 import ImageTools from './components/ImageTools.vue';
@@ -107,6 +116,10 @@ import CoverDesigner from './components/CoverDesigner.vue';
 import VideoEditor from './components/VideoEditor.vue';
 import VoiceSynthesizer from './components/VoiceSynthesizer.vue';
 import PlatformPublisher from './components/PlatformPublisher.vue';
+import AiImageGenerator from './components/AiImageGenerator.vue';
+import HotTracker from './components/HotTracker.vue';
+import StrategyManager from './components/StrategyManager.vue';
+import PluginMarket from './components/PluginMarket.vue';
 
 // --- State for Collapsible Sidebar ---
 const isCollapsed = ref(false);
@@ -135,8 +148,10 @@ const componentMap = {
   'video-editor': VideoEditor,
   'voice-synthesizer': VoiceSynthesizer,
   'platform-publisher': PlatformPublisher,
-  'strategy-management': PlaceholderComponent,
-  'plugin-market': PlaceholderComponent,
+  'ai-image-generator': AiImageGenerator,
+  'hot-tracker': HotTracker,
+  'strategy-management': StrategyManager,
+  'plugin-market': PluginMarket,
 };
 const handleMenuSelect = (index) => {
   activeComponent.value = componentMap[index] || PlaceholderComponent;

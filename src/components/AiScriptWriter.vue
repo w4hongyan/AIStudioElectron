@@ -7,7 +7,33 @@
           <div class="card-header">
             <span>🎬 AI 影视化生产力工具</span>
           </div>
-        </template>
+          <!-- 模板选择对话框 -->
+  <el-dialog v-model="showTemplateDialog" title="选择模板" width="500px">
+    <div v-if="templates.length === 0" style="text-align: center; color: #999">
+      暂无保存的模板
+    </div>
+    <div v-else>
+      <div 
+        v-for="template in templates" 
+        :key="template.timestamp"
+        class="template-item"
+        @click="applyTemplate(template)"
+        style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px; border-radius: 4px; cursor: pointer"
+      >
+        <div style="font-weight: bold">{{ template.name }}</div>
+        <div style="font-size: 12px; color: #666">
+          {{ new Date(template.timestamp).toLocaleString() }}
+        </div>
+      </div>
+    </div>
+  </el-dialog>
+</template>
+        <el-alert
+          title="⚠️ 演示模式：当前为模拟生成，实际使用时将连接真实AI服务"
+          type="warning"
+          :closable="false"
+          style="margin-bottom: 15px"
+        />
         
         <el-form :model="form" label-position="top">
           <el-form-item label="项目文件夹">
@@ -16,6 +42,14 @@
                 <el-button @click="selectProjectFolder">选择...</el-button>
               </template>
             </el-input>
+            <div style="margin-top: 10px">
+              <el-input 
+                v-model="projectSearch" 
+                placeholder="搜索项目..." 
+                :prefix-icon="Search"
+                clearable
+              />
+            </div>
           </el-form-item>
           <el-form-item label="故事核心主题">
             <el-input
@@ -23,7 +57,24 @@
               type="textarea"
               :rows="3"
               placeholder="例如：一个程序员在赛博朋克都市中寻找丢失的数字猫"
-            />
+            >
+              <template #append>
+                <el-button @click="optimizeTitle" :icon="MagicStick">AI优化</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item label="热门标签推荐">
+            <div style="display: flex; gap: 5px; flex-wrap: wrap">
+              <el-tag
+                v-for="tag in recommendedTags"
+                :key="tag"
+                effect="plain"
+                style="cursor: pointer"
+                @click="addTag(tag)"
+              >
+                {{ tag }}
+              </el-tag>
+            </div>
           </el-form-item>
 
           <el-collapse v-model="activeCollapse" class="details-collapse">
@@ -91,6 +142,14 @@
               <el-icon style="margin-right: 8px;"><MagicStick /></el-icon>
               {{ loading ? 'AI 正在全力创作中...' : '生成导演级脚本' }}
             </el-button>
+            <div style="margin-top: 10px; display: flex; gap: 5px">
+              <el-button @click="saveAsTemplate" type="warning" plain style="flex: 1">
+                保存模板
+              </el-button>
+              <el-button @click="loadTemplate" type="info" plain style="flex: 1">
+                加载模板
+              </el-button>
+            </div>
           </el-form-item>
         </el-form>
       </el-card>
@@ -244,6 +303,11 @@ const form = reactive({
 });
 const loading = ref(false);
 const result = ref(null);
+const projectSearch = ref('');
+const templates = ref([]);
+const showTemplateDialog = ref(false);
+const recommendedTags = ref(['AI工具', '效率提升', '自媒体', '教程', '实用技巧']);
+const selectedTags = ref([]);
 
 const generateScript = () => {
   if (!form.topic) {
@@ -271,6 +335,78 @@ const generateScript = () => {
     loading.value = false;
   }, 2000);
 };
+
+const saveAsTemplate = () => {
+  const templateName = prompt('请输入模板名称：');
+  if (!templateName) return;
+
+  const template = {
+    name: templateName,
+    ...form,
+    timestamp: Date.now()
+  };
+
+  const savedTemplates = JSON.parse(localStorage.getItem('aiScriptTemplates') || '[]');
+  savedTemplates.unshift(template);
+
+  if (savedTemplates.length > 10) {
+    savedTemplates.splice(10);
+  }
+
+  localStorage.setItem('aiScriptTemplates', JSON.stringify(savedTemplates));
+  templates.value = savedTemplates;
+  ElMessage.success('模板保存成功！');
+};
+
+const loadTemplate = () => {
+  const savedTemplates = JSON.parse(localStorage.getItem('aiScriptTemplates') || '[]');
+  if (savedTemplates.length === 0) {
+    ElMessage.info('暂无保存的模板');
+    return;
+  }
+  templates.value = savedTemplates;
+  showTemplateDialog.value = true;
+};
+
+const applyTemplate = (template) => {
+    Object.assign(form, {
+      topic: template.topic,
+      characterBio: template.characterBio,
+      storyOutline: template.storyOutline,
+      specificScenes: template.specificScenes,
+      style: template.style,
+      shots: template.shots,
+      negativePrompt: template.negativePrompt
+    });
+    showTemplateDialog.value = false;
+    ElMessage.success('模板加载成功！');
+  };
+
+  const optimizeTitle = () => {
+    if (!form.topic) {
+      ElMessage.warning('请先输入视频主题');
+      return;
+    }
+    
+    // 模拟AI标题优化
+    const optimizedTitles = [
+      `🔥爆火！${form.topic}，99%的人都不知道`,
+      `实测有效！${form.topic}的终极攻略`,
+      `价值过万！${form.topic}全流程分享`,
+      `${form.topic}，这样做效果提升10倍！`
+    ];
+    
+    const randomTitle = optimizedTitles[Math.floor(Math.random() * optimizedTitles.length)];
+    form.topic = randomTitle;
+    ElMessage.success('标题已优化！');
+  };
+
+  const addTag = (tag) => {
+    if (!selectedTags.value.includes(tag)) {
+      selectedTags.value.push(tag);
+      ElMessage.success(`已添加标签：${tag}`);
+    }
+  };
 
 const regeneratePart = (part, index = -1) => {
   console.log(`Regenerating ${part} at index ${index}...`);

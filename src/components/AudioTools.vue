@@ -43,7 +43,7 @@
       <el-card class="control-panel">
         <template #header>
           <div class="card-header">
-            <span>语音转文字</span>
+            <span>🎵 AI音频处理中心</span>
           </div>
         </template>
         <el-form label-position="top">
@@ -53,6 +53,33 @@
               <el-option label="English (US)" value="en-US" />
             </el-select>
           </el-form-item>
+          
+          <el-divider>AI增强功能</el-divider>
+          
+          <el-form-item label="背景音乐推荐">
+            <el-select v-model="selectedMusic" placeholder="根据情感选择音乐" style="width: 100%">
+              <el-option label="欢快轻松" value="happy" />
+              <el-option label="励志向上" value="inspiring" />
+              <el-option label="温馨治愈" value="warm" />
+              <el-option label="科技感" value="tech" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="音频增强">
+            <el-switch v-model="enableNoiseReduction" active-text="智能降噪" />
+            <el-switch v-model="enableVolumeBoost" active-text="音量增强" />
+          </el-form-item>
+          
+          <el-form-item label="变声效果">
+            <el-select v-model="voiceEffect" placeholder="选择变声效果" style="width: 100%">
+              <el-option label="原声" value="original" />
+              <el-option label="机器人" value="robot" />
+              <el-option label="卡通" value="cartoon" />
+              <el-option label="男变女" value="male2female" />
+              <el-option label="女变男" value="female2male" />
+            </el-select>
+          </el-form-item>
+          
           <el-form-item>
             <el-button 
               type="primary" 
@@ -62,7 +89,7 @@
               style="width: 100%;"
             >
               <el-icon style="margin-right: 8px;"><Microphone /></el-icon>
-              {{ isProcessing ? '识别中...' : `开始识别 ${fileList.length} 个文件` }}
+              {{ isProcessing ? '处理中...' : `开始处理 ${fileList.length} 个文件` }}
             </el-button>
           </el-form-item>
         </el-form>
@@ -80,6 +107,10 @@ const fileList = ref([]);
 const language = ref('zh-CN');
 const isProcessing = ref(false);
 const transcriptionResult = ref(null);
+const selectedMusic = ref('');
+const enableNoiseReduction = ref(true);
+const enableVolumeBoost = ref(false);
+const voiceEffect = ref('original');
 
 const startTranscription = async () => {
   if (fileList.value.length === 0) {
