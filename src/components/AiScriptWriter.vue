@@ -1,643 +1,530 @@
 <template>
-  <el-row :gutter="24" class="main-layout">
-    <!-- Left Column: Control Panel -->
-    <el-col :span="6">
-      <el-card class="feature-card control-panel">
-        <template #header>
-          <div class="card-header">
-            <span>🎬 AI 影视化生产力工具</span>
-          </div>
-          <!-- 模板选择对话框 -->
-  <el-dialog v-model="showTemplateDialog" title="选择模板" width="500px">
-    <div v-if="templates.length === 0" style="text-align: center; color: #999">
-      暂无保存的模板
-    </div>
-    <div v-else>
-      <div 
-        v-for="template in templates" 
-        :key="template.timestamp"
-        class="template-item"
-        @click="applyTemplate(template)"
-        style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px; border-radius: 4px; cursor: pointer"
-      >
-        <div style="font-weight: bold">{{ template.name }}</div>
-        <div style="font-size: 12px; color: #666">
-          {{ new Date(template.timestamp).toLocaleString() }}
-        </div>
-      </div>
-    </div>
-  </el-dialog>
-</template>
-        <el-alert
-          title="⚠️ 演示模式：当前为模拟生成，实际使用时将连接真实AI服务"
-          type="warning"
-          :closable="false"
-          style="margin-bottom: 15px"
-        />
-        
-        <el-form :model="form" label-position="top">
-          <el-form-item label="项目文件夹">
-            <el-input v-model="projectPath" placeholder="未设置" readonly>
-              <template #append>
-                <el-button @click="selectProjectFolder">选择...</el-button>
-              </template>
-            </el-input>
-            <div style="margin-top: 10px">
-              <el-input 
-                v-model="projectSearch" 
-                placeholder="搜索项目..." 
-                :prefix-icon="Search"
-                clearable
-              />
+  <div>
+    <el-row :gutter="24" class="main-layout">
+      <!-- Left Column: Control Panel -->
+      <el-col :span="6">
+        <el-card class="feature-card control-panel">
+          <template #header>
+            <div class="card-header">
+              <span>🎬 AI 影视化生产力工具</span>
             </div>
-          </el-form-item>
-          <el-form-item label="故事核心主题">
-            <el-input
-              v-model="form.topic"
-              type="textarea"
-              :rows="3"
-              placeholder="例如：一个程序员在赛博朋克都市中寻找丢失的数字猫"
-            >
-              <template #append>
-                <el-button @click="optimizeTitle" :icon="MagicStick">AI优化</el-button>
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item label="热门标签推荐">
-            <div style="display: flex; gap: 5px; flex-wrap: wrap">
-              <el-tag
-                v-for="tag in recommendedTags"
-                :key="tag"
-                effect="plain"
-                style="cursor: pointer"
-                @click="addTag(tag)"
-              >
-                {{ tag }}
-              </el-tag>
-            </div>
-          </el-form-item>
-
-          <el-collapse v-model="activeCollapse" class="details-collapse">
-            <el-collapse-item title="高级创作参数" name="1">
-              <el-form-item label="主角设定 (可选)">
-                <el-input
-                  v-model="form.characterBio"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="主角姓名、身份、性格、目标等"
-                />
-              </el-form-item>
-              <el-form-item label="故事大纲 (可选)">
-                <el-input
-                  v-model="form.storyOutline"
-                  type="textarea"
-                  :rows="5"
-                  placeholder="故事的起因、经过、高潮、结局"
-                />
-              </el-form-item>
-              <el-form-item label="指定场景 (可选)">
-                <el-input
-                  v-model="form.specificScenes"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="希望必须出现的具体场景或情节，每行一个"
-                />
-              </el-form-item>
-              <el-form-item label="负向提示词 (可选)">
-                <el-input
-                  v-model="form.negativePrompt"
-                  type="textarea"
-                  :rows="2"
-                  placeholder="例如：避免出现暴力、血腥内容"
-                />
-              </el-form-item>
-            </el-collapse-item>
-          </el-collapse>
-
-          <el-form-item label="选择视频风格">
-            <el-select v-model="form.style" placeholder="请选择风格" style="width: 100%;">
-              <el-option label="赛博朋克" value="cyberpunk" />
-              <el-option label="科幻未来" value="sci-fi" />
-              <el-option label="国风奇幻" value="fantasy-guofeng" />
-              <el-option label="温情日常" value="slice-of-life" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="预估镜头数">
-            <el-input-number v-model="form.shots" :min="3" :max="20" style="width: 100%;" />
-          </el-form-item>
+          </template>
           
-          <el-form-item>
-            <el-row :gutter="10" style="width: 100%;">
-              <el-col :span="12">
-                <el-button :icon="FolderOpened" @click="loadProject" style="width: 100%;">加载项目</el-button>
+          <!-- 模板选择对话框 -->
+          <el-dialog v-model="showTemplateDialog" title="选择模板" width="500px">
+            <div v-if="templates.length === 0" style="text-align: center; color: #999">
+              暂无保存的模板
+            </div>
+            <div v-else>
+              <div 
+                v-for="template in templates" 
+                :key="template.timestamp"
+                class="template-item"
+                @click="applyTemplate(template)"
+                style="padding: 10px; border: 1px solid #eee; margin-bottom: 10px; border-radius: 4px; cursor: pointer"
+              >
+                <div style="font-weight: bold">{{ template.name }}</div>
+                <div style="font-size: 12px; color: #666">
+                  {{ new Date(template.timestamp).toLocaleString() }}
+                </div>
+              </div>
+            </div>
+          </el-dialog>
+    
+          <el-alert
+            title="⚠️ 演示模式：当前为模拟生成，实际使用时将连接真实AI服务"
+            type="warning"
+            :closable="false"
+            style="margin-bottom: 15px"
+          />
+          
+          <el-form :model="form" label-position="top">
+            <el-form-item label="项目文件夹">
+              <el-input v-model="projectPath" placeholder="未设置" readonly>
+                <template #append>
+                  <el-button @click="selectProjectFolder">选择...</el-button>
+                </template>
+              </el-input>
+              <div style="margin-top: 10px">
+                <el-input 
+                  v-model="projectSearch" 
+                  placeholder="搜索项目..." 
+                  :prefix-icon="Search"
+                  clearable
+                />
+              </div>
+            </el-form-item>
+            <el-form-item label="故事核心主题">
+              <el-input
+                v-model="form.topic"
+                type="textarea"
+                :rows="3"
+                placeholder="例如：一个程序员在赛博朋克都市中寻找丢失的数字猫"
+              >
+                <template #append>
+                  <el-button @click="optimizeTitle" :icon="MagicStick">AI优化</el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+            <el-form-item label="热门标签推荐">
+              <div style="display: flex; gap: 5px; flex-wrap: wrap">
+                <el-tag
+                  v-for="tag in recommendedTags"
+                  :key="tag"
+                  effect="plain"
+                  style="cursor: pointer"
+                  @click="addTag(tag)"
+                >
+                  {{ tag }}
+                </el-tag>
+              </div>
+            </el-form-item>
+
+            <el-collapse v-model="activeCollapse" class="details-collapse">
+              <el-collapse-item title="高级创作参数" name="1">
+                <el-form-item label="主角设定 (可选)">
+                  <el-input
+                    v-model="form.characterBio"
+                    type="textarea"
+                    :rows="3"
+                    placeholder="主角姓名、身份、性格、目标等"
+                  />
+                </el-form-item>
+                <el-form-item label="故事大纲 (可选)">
+                  <el-input
+                    v-model="form.storyOutline"
+                    type="textarea"
+                    :rows="5"
+                    placeholder="故事的起因、经过、高潮、结局"
+                  />
+                </el-form-item>
+                <el-form-item label="指定场景 (可选)">
+                  <el-input
+                    v-model="form.specificScenes"
+                    type="textarea"
+                    :rows="3"
+                    placeholder="希望必须出现的具体场景或情节，每行一个"
+                  />
+                </el-form-item>
+                <el-form-item label="负向提示词 (可选)">
+                  <el-input
+                    v-model="form.negativePrompt"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="例如：避免出现暴力、血腥内容"
+                  />
+                </el-form-item>
+              </el-collapse-item>
+            </el-collapse>
+
+            <el-form-item label="选择视频风格">
+              <el-select v-model="form.style" placeholder="请选择风格" style="width: 100%;">
+                <el-option label="赛博朋克" value="cyberpunk" />
+                <el-option label="科幻未来" value="sci-fi" />
+                <el-option label="国风奇幻" value="fantasy-guofeng" />
+                <el-option label="温情日常" value="slice-of-life" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="预估镜头数">
+              <el-input-number v-model="form.shots" :min="3" :max="20" style="width: 100%;" />
+            </el-form-item>
+            
+            <el-form-item>
+              <el-row :gutter="10" style="width: 100%;">
+                <el-col :span="12">
+                  <el-button :icon="FolderOpened" @click="loadProject" style="width: 100%;">加载项目</el-button>
+                </el-col>
+                <el-col :span="12">
+                  <el-button type="primary" :icon="FolderAdd" @click="saveProject" style="width: 100%;">保存项目</el-button>
+                </el-col>
+              </el-row>
+            </el-form-item>
+
+            <el-form-item>
+              <el-button type="primary" @click="generateScript" :loading="loading" size="large" style="width: 100%;">
+                <el-icon style="margin-right: 8px;"><MagicStick /></el-icon>
+                {{ loading ? 'AI 正在全力创作中...' : '生成导演级脚本' }}
+              </el-button>
+              <div style="margin-top: 10px; display: flex; gap: 5px">
+                <el-button @click="saveAsTemplate" type="warning" plain style="flex: 1">
+                  保存模板
+                </el-button>
+                <el-button @click="loadTemplate" type="info" plain style="flex: 1">
+                  加载模板
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-col>
+
+      <!-- Right Column: Results -->
+      <el-col :span="18">
+        <div class="result-container" v-loading="loading" element-loading-text="AI思考中，请稍候...">
+          <div v-if="!result" class="placeholder">
+            <el-empty description="在左侧输入创作要求，开始您的AI影视之旅" />
+          </div>
+          <div v-else>
+            <el-row :gutter="20">
+              <el-col :span="8">
+                <el-card class="result-card">
+                  <template #header>
+                    <div class="card-header-content">
+                      <span>故事简介</span>
+                      <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('synopsis')" />
+                    </div>
+                  </template>
+                  <el-input v-model="result.synopsis" type="textarea" autosize class="result-text-input" />
+                </el-card>
               </el-col>
-              <el-col :span="12">
-                <el-button type="primary" :icon="FolderAdd" @click="saveProject" style="width: 100%;">保存项目</el-button>
+              <el-col :span="8">
+                <el-card class="result-card">
+                  <template #header>
+                    <div class="card-header-content">
+                      <span>场景预设</span>
+                      <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('scenePreset')" />
+                    </div>
+                  </template>
+                  <el-input v-model="result.scenePreset" type="textarea" autosize class="result-text-input" />
+                </el-card>
+              </el-col>
+              <el-col :span="8">
+                <el-card class="result-card">
+                  <template #header>
+                    <div class="card-header-content">
+                      <span>人物预设</span>
+                      <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('characterPreset')" />
+                    </div>
+                  </template>
+                  <el-input v-model="result.characterPreset" type="textarea" autosize class="result-text-input" />
+                </el-card>
               </el-col>
             </el-row>
-          </el-form-item>
 
-          <el-form-item>
-            <el-button type="primary" @click="generateScript" :loading="loading" size="large" style="width: 100%;">
-              <el-icon style="margin-right: 8px;"><MagicStick /></el-icon>
-              {{ loading ? 'AI 正在全力创作中...' : '生成导演级脚本' }}
-            </el-button>
-            <div style="margin-top: 10px; display: flex; gap: 5px">
-              <el-button @click="saveAsTemplate" type="warning" plain style="flex: 1">
-                保存模板
-              </el-button>
-              <el-button @click="loadTemplate" type="info" plain style="flex: 1">
-                加载模板
-              </el-button>
-            </div>
-          </el-form-item>
-        </el-form>
-      </el-card>
-    </el-col>
-
-    <!-- Right Column: Results -->
-    <el-col :span="18">
-      <div class="result-container" v-loading="loading" element-loading-text="AI思考中，请稍候...">
-        <div v-if="!result" class="placeholder">
-          <el-empty description="在左侧输入创作要求，开始您的AI影视之旅" />
-        </div>
-        <div v-else>
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <el-card class="result-card">
-                <template #header>
-                  <div class="card-header-content">
-                    <span>故事简介</span>
-                    <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('synopsis')" />
+            <el-card class="table-card">
+              <template #header>
+                <div class="card-header-content">
+                  <span>📋 分镜脚本</span>
+                  <div>
+                    <el-button :icon="Refresh" @click="regenerateTable">重新生成</el-button>
+                    <el-button :icon="Download" @click="exportTable">导出表格</el-button>
                   </div>
-                </template>
-                <el-input v-model="result.synopsis" type="textarea" autosize class="result-text-input" />
-              </el-card>
-            </el-col>
-            <el-col :span="8">
-              <el-card class="result-card">
-                <template #header>
-                  <div class="card-header-content">
-                    <span>场景预设</span>
-                    <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('scenePreset')" />
-                  </div>
-                </template>
-                <el-input v-model="result.scenePreset" type="textarea" autosize class="result-text-input" />
-              </el-card>
-            </el-col>
-            <el-col :span="8">
-              <el-card class="result-card">
-                <template #header>
-                  <div class="card-header-content">
-                    <span>人物预设</span>
-                    <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('characterPreset')" />
-                  </div>
-                </template>
-                <el-input v-model="result.characterPreset" type="textarea" autosize class="result-text-input" />
-              </el-card>
-            </el-col>
-          </el-row>
-          
-          <el-card class="result-card table-card">
-            <template #header>
-              <div class="card-header-content">
-                <span>分镜列表</span>
-                <el-button type="success" :icon="Download" circle plain @click="exportDataAsXLSX" />
-              </div>
-            </template>
-            <el-table :data="result.shots" stripe style="width: 100%">
-              <el-table-column prop="timeline" label="时间轴" width="100" />
-              <el-table-column prop="character" label="人物" width="120">
-                <template #default="scope">
-                  <el-input v-model="scope.row.character" type="textarea" autosize />
-                </template>
-              </el-table-column>
-              <el-table-column prop="shot" label="镜头描述" width="250">
-                <template #default="scope">
-                  <el-input v-model="scope.row.shot" type="textarea" autosize />
-                </template>
-              </el-table-column>
-              <el-table-column prop="t2i_prompt" label="文生图提示词">
-                <template #default="scope">
-                  <el-input v-model="scope.row.t2i_prompt" type="textarea" autosize />
-                </template>
-              </el-table-column>
-              <el-table-column prop="i2v_prompt" label="图生视频提示词">
-                <template #default="scope">
-                  <el-input v-model="scope.row.i2v_prompt" type="textarea" autosize />
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="80" fixed="right">
-                <template #default="scope">
-                  <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('shot', scope.$index)" />
-                </template>
-              </el-table-column>
-              <el-table-column label="媒体预览" width="180" fixed="right">
-                <template #default="scope">
-                  <div class="media-container">
-                    <video v-if="scope.row.videoUrl" :src="scope.row.videoUrl" class="shot-video" controls />
-                    <el-image
-                      v-else
-                      :src="scope.row.imageUrl"
-                      fit="cover"
-                      class="shot-image"
-                      :preview-src-list="scope.row.imageUrl ? [scope.row.imageUrl] : []"
-                      hide-on-click-modal
-                    >
-                      <template #error>
-                        <div class="image-slot">
-                          <el-icon><Picture /></el-icon>
+                </div>
+              </template>
+              <el-table :data="tableData" style="width: 100%" border>
+                <el-table-column prop="shot" label="镜头" width="80" align="center" />
+                <el-table-column prop="scene" label="场景描述" min-width="200" />
+                <el-table-column prop="duration" label="时长" width="80" align="center" />
+                <el-table-column prop="camera" label="运镜" width="100" />
+                <el-table-column prop="effect" label="特效" width="100" />
+                <el-table-column label="画面" width="180" align="center">
+                  <template #default="scope">
+                    <div class="media-container">
+                      <el-image 
+                        v-if="scope.row.imageUrl" 
+                        :src="scope.row.imageUrl" 
+                        class="shot-image" 
+                        fit="cover"
+                      >
+                        <template #error>
+                          <div class="image-slot">
+                            <el-icon><Picture /></el-icon>
+                          </div>
+                        </template>
+                      </el-image>
+                      <div v-else class="shot-image">
+                        <el-icon><Picture /></el-icon>
+                      </div>
+                      <div class="media-overlay">
+                        <div class="media-actions">
+                          <el-button 
+                            size="small" 
+                            :icon="PictureRounded" 
+                            circle 
+                            @click="generateImage(scope.$index)"
+                          />
+                          <el-button 
+                            size="small" 
+                            :icon="VideoCamera" 
+                            circle 
+                            @click="generateVideo(scope.$index)"
+                          />
                         </div>
-                      </template>
-                    </el-image>
-                    <div class="media-overlay">
-                      <div class="media-actions">
-                        <el-button
-                          type="warning"
-                          :icon="PictureRounded"
-                          circle
-                          size="small"
-                          @click="generateImageForRow(scope.$index)"
-                          :loading="scope.row.isGeneratingImage"
-                          title="生成图片"
-                        />
-                        <el-button
-                          type="danger"
-                          :icon="VideoCamera"
-                          circle
-                          size="small"
-                          @click="generateVideoForRow(scope.$index)"
-                          :loading="scope.row.isGeneratingVideo"
-                          :disabled="!scope.row.imageUrl"
-                          title="生成视频"
-                        />
                       </div>
                     </div>
-                  </div>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-card>
+          </div>
         </div>
-      </div>
-    </el-col>
-  </el-row>
+      </el-col>
+    </el-row>
+
+    <!-- 智能推荐和性能优化 -->
+    <div class="optimization-panel">
+      <SmartRecommendations />
+      <CacheManager />
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { Refresh, Download, Picture, PictureRounded, FolderAdd, FolderOpened, VideoCamera } from '@element-plus/icons-vue';
-import * as XLSX from 'xlsx';
-import { ElMessage } from 'element-plus';
+import { ref, reactive, onMounted, computed } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { MagicStick, FolderOpened, FolderAdd, Search, Refresh, Download, Picture, PictureRounded, VideoCamera } from '@element-plus/icons-vue'
+import SmartRecommendations from './SmartRecommendations.vue'
+import CacheManager from './CacheManager.vue'
 
-const projectPath = ref('');
-const activeCollapse = ref([]);
+const projectPath = ref('')
+const projectSearch = ref('')
+const loading = ref(false)
+const result = ref(null)
+const activeCollapse = ref(['1'])
+const showTemplateDialog = ref(false)
+const templates = ref([])
+
 const form = reactive({
   topic: '',
+  style: 'cyberpunk',
+  shots: 8,
   characterBio: '',
   storyOutline: '',
   specificScenes: '',
-  style: 'cyberpunk',
-  shots: 5,
-  negativePrompt: '',
-});
-const loading = ref(false);
-const result = ref(null);
-const projectSearch = ref('');
-const templates = ref([]);
-const showTemplateDialog = ref(false);
-const recommendedTags = ref(['AI工具', '效率提升', '自媒体', '教程', '实用技巧']);
-const selectedTags = ref([]);
+  negativePrompt: ''
+})
 
-const generateScript = () => {
-  if (!form.topic) {
-    ElMessage.warning('请输入故事核心主题！');
-    return;
+const recommendedTags = ref([
+  '#科幻', '#赛博朋克', '#AI', '#未来', '#科技', '#都市', '#奇幻', '#冒险'
+])
+
+const tableData = ref([])
+
+const addTag = (tag) => {
+  if (!form.topic.includes(tag)) {
+    form.topic += ' ' + tag
   }
-  console.log('Generating with form data:', form);
-  loading.value = true;
-  result.value = null;
+}
 
-  // Simulate AI API call
+const optimizeTitle = () => {
+  if (!form.topic.trim()) {
+    ElMessage.warning('请先输入故事主题')
+    return
+  }
+  
+  const optimizations = [
+    '程序员找回数字猫的赛博朋克之旅',
+    '霓虹都市下的代码与温情：寻找AI伙伴',
+    '当代码遇见情感：数字世界的寻猫奇遇'
+  ]
+  
+  form.topic = optimizations[Math.floor(Math.random() * optimizations.length)]
+  ElMessage.success('标题已优化！')
+}
+
+const generateScript = async () => {
+  if (!form.topic.trim()) {
+    ElMessage.warning('请输入故事主题')
+    return
+  }
+
+  loading.value = true
+  
+  // 模拟AI生成过程
   setTimeout(() => {
     result.value = {
-      synopsis: '在2077年的霓虹都市“夜之城”，一名孤独的程序员“K”为了寻找他意外丢失的数字宠物猫“比特”，踏上了一段穿越数据与现实边界的危险旅程。',
-      scenePreset: '高楼林立、霓虹闪烁的赛博朋克都市夜景，空中交通穿梭，巨型全息广告牌闪烁。街道层面潮湿、拥挤，充满蒸汽和各式各样的人。',
-      characterPreset: '主角“K”：20多岁，技术宅，穿着功能性夹克，眼神略带疲惫但充满决心。数字猫“比特”：由纯粹的数据构成，形态可变，发出柔和的蓝光。',
-      shots: [
-        { timeline: '0-5s', character: '无', shot: '广角，夜之城全景，霓虹灯雨夜，镜头缓缓推向K的公寓窗户。', t2i_prompt: 'cyberpunk city, rainy night, neon lights, wide angle, cinematic, view from above, blade runner style', i2v_prompt: 'slow zoom in, rain dripping on glass', imageUrl: '', isGeneratingImage: false, videoUrl: '', isGeneratingVideo: false },
-        { timeline: '5-10s', character: 'K', shot: '中景，K在电脑前，屏幕上显示着“比特”的可爱代码形象，突然屏幕一黑。', t2i_prompt: 'a young programmer in a dark room, multiple monitors, holographic digital cat on screen, surprised expression, cinematic lighting', i2v_prompt: 'screen flickers and goes black, cat disappears', imageUrl: '', isGeneratingImage: false, videoUrl: '', isGeneratingVideo: false },
-        { timeline: '10-15s', character: 'K', shot: '特写，K戴上神经接口设备，眼神坚定。', t2i_prompt: 'close up, man putting on a neural interface headset, determined look, glowing blue lights on the device, detailed, sci-fi', i2v_prompt: 'subtle light glow effect, very slow forward dolly', imageUrl: '', isGeneratingImage: false, videoUrl: '', isGeneratingVideo: false },
-        { timeline: '15-25s', character: 'K', shot: '快速蒙太奇，K在数据流中穿梭，躲避防火墙，追踪“比特”的踪迹。', t2i_prompt: 'man surfing on a stream of data, digital world, abstract, glowing lines, binary code, dodging red firewall barriers, motion blur', i2v_prompt: 'fast-paced camera movement, glitch effects, particle effects', imageUrl: '', isGeneratingImage: false, videoUrl: '', isGeneratingVideo: false },
-        { timeline: '25-30s', character: 'K, 比特', shot: '远景，K在一个巨大的数据服务器核心找到了被困的“比特”，他伸出手。', t2i_prompt: 'a man reaching his hand towards a small glowing digital cat trapped inside a massive, glowing server core, epic scale, volumetric lighting', i2v_prompt: 'camera slowly orbits, particles floating around the core', imageUrl: '', isGeneratingImage: false, videoUrl: '', isGeneratingVideo: false },
-      ],
-    };
-    loading.value = false;
-  }, 2000);
-};
+      synopsis: `在一个${form.style === 'cyberpunk' ? '霓虹闪烁的未来都市' : '奇幻世界'}中，${form.topic}的故事展开。主角将经历一段充满挑战与发现的旅程，最终找到内心的答案。`,
+      scenePreset: `故事发生在${form.style === 'cyberpunk' ? '高楼林立的赛博朋克都市，霓虹灯映照下的雨夜街道' : '充满魔法与科技的奇幻王国'}，营造出${form.style === 'cyberpunk' ? '冷峻而充满希望' : '神秘而温馨'}的氛围。`,
+      characterPreset: `主角是一位${form.characterBio || '勇敢而富有同情心的探索者'}，在寻找${form.topic.split('寻找')[1] || '失落的记忆'}的过程中逐渐成长。`
+    }
+
+    // 生成分镜脚本
+    tableData.value = Array.from({ length: form.shots }, (_, i) => ({
+      shot: i + 1,
+      scene: `第${i + 1}个镜头：${form.topic.substring(0, 20)}...`,
+      duration: `${Math.floor(Math.random() * 5) + 3}秒`,
+      camera: ['推镜', '拉镜', '摇摄', '移摄', '跟拍'][Math.floor(Math.random() * 5)],
+      effect: ['淡入淡出', '闪白', '缩放', '旋转', '静止'][Math.floor(Math.random() * 5)],
+      imageUrl: ''
+    }))
+
+    loading.value = false
+    ElMessage.success('AI脚本生成完成！')
+  }, 2000)
+}
+
+const regeneratePart = (part) => {
+  const variations = {
+    synopsis: [
+      '这是一个关于勇气与发现的故事，主角在未知的旅程中找到了真正的自我。',
+      '在科技与情感的交织中，故事展现了人性最美好的一面。',
+      '一段跨越时空的冒险，最终回归内心的平静与成长。'
+    ],
+    scenePreset: [
+      '光影交错的视觉效果，营造出梦幻而真实的氛围。',
+      '细腻的环境刻画，让每个场景都充满生命力。',
+      '色彩与构图的完美结合，呈现出电影般的质感。'
+    ],
+    characterPreset: [
+      '角色的内心变化贯穿始终，展现人性的复杂与美好。',
+      '每个角色都有独特的个性和动人的成长轨迹。',
+      '通过角色的眼睛，我们看到了更广阔的世界。'
+    ]
+  }
+  
+  if (result.value && variations[part]) {
+    const options = variations[part]
+    result.value[part] = options[Math.floor(Math.random() * options.length)]
+  }
+}
+
+const regenerateTable = () => {
+  tableData.value = Array.from({ length: form.shots }, (_, i) => ({
+    shot: i + 1,
+    scene: `重新生成的第${i + 1}个镜头内容`,
+    duration: `${Math.floor(Math.random() * 5) + 3}秒`,
+    camera: ['推镜', '拉镜', '摇摄', '移摄', '跟拍'][Math.floor(Math.random() * 5)],
+    effect: ['淡入淡出', '闪白', '缩放', '旋转', '静止'][Math.floor(Math.random() * 5)],
+    imageUrl: ''
+  }))
+}
+
+const exportTable = () => {
+  const data = tableData.value.map(row => ({
+    镜头: row.shot,
+    场景描述: row.scene,
+    时长: row.duration,
+    运镜: row.camera,
+    特效: row.effect
+  }))
+  
+  const ws = XLSX.utils.json_to_sheet(data)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '分镜脚本')
+  XLSX.writeFile(wb, `${form.topic || 'AI脚本'}.xlsx`)
+}
+
+const generateImage = (index) => {
+  ElMessage.info(`正在生成第${index + 1}个镜头的图片...`)
+  tableData.value[index].imageUrl = `https://via.placeholder.com/160x100?text=镜头${index + 1}`
+}
+
+const generateVideo = (index) => {
+  ElMessage.info(`正在生成第${index + 1}个镜头的视频预览...`)
+}
 
 const saveAsTemplate = () => {
-  const templateName = prompt('请输入模板名称：');
-  if (!templateName) return;
-
-  const template = {
-    name: templateName,
-    ...form,
-    timestamp: Date.now()
-  };
-
-  const savedTemplates = JSON.parse(localStorage.getItem('aiScriptTemplates') || '[]');
-  savedTemplates.unshift(template);
-
-  if (savedTemplates.length > 10) {
-    savedTemplates.splice(10);
+  if (!form.topic.trim()) {
+    ElMessage.warning('请输入模板名称')
+    return
   }
-
-  localStorage.setItem('aiScriptTemplates', JSON.stringify(savedTemplates));
-  templates.value = savedTemplates;
-  ElMessage.success('模板保存成功！');
-};
+  
+  const template = {
+    name: form.topic,
+    form: { ...form },
+    timestamp: Date.now()
+  }
+  
+  templates.value.push(template)
+  localStorage.setItem('aiScriptTemplates', JSON.stringify(templates.value))
+  ElMessage.success('模板已保存！')
+}
 
 const loadTemplate = () => {
-  const savedTemplates = JSON.parse(localStorage.getItem('aiScriptTemplates') || '[]');
-  if (savedTemplates.length === 0) {
-    ElMessage.info('暂无保存的模板');
-    return;
-  }
-  templates.value = savedTemplates;
-  showTemplateDialog.value = true;
-};
+  showTemplateDialog.value = true
+}
 
 const applyTemplate = (template) => {
-    Object.assign(form, {
-      topic: template.topic,
-      characterBio: template.characterBio,
-      storyOutline: template.storyOutline,
-      specificScenes: template.specificScenes,
-      style: template.style,
-      shots: template.shots,
-      negativePrompt: template.negativePrompt
-    });
-    showTemplateDialog.value = false;
-    ElMessage.success('模板加载成功！');
-  };
-
-  const optimizeTitle = () => {
-    if (!form.topic) {
-      ElMessage.warning('请先输入视频主题');
-      return;
-    }
-    
-    // 模拟AI标题优化
-    const optimizedTitles = [
-      `🔥爆火！${form.topic}，99%的人都不知道`,
-      `实测有效！${form.topic}的终极攻略`,
-      `价值过万！${form.topic}全流程分享`,
-      `${form.topic}，这样做效果提升10倍！`
-    ];
-    
-    const randomTitle = optimizedTitles[Math.floor(Math.random() * optimizedTitles.length)];
-    form.topic = randomTitle;
-    ElMessage.success('标题已优化！');
-  };
-
-  const addTag = (tag) => {
-    if (!selectedTags.value.includes(tag)) {
-      selectedTags.value.push(tag);
-      ElMessage.success(`已添加标签：${tag}`);
-    }
-  };
-
-const regeneratePart = (part, index = -1) => {
-  console.log(`Regenerating ${part} at index ${index}...`);
-  // Simulate API call for regeneration
-  setTimeout(() => {
-    if (part === 'synopsis') {
-      result.value.synopsis = '（新生成）一名叛逆的赏金猎人，在混乱的火星殖民地，发现了一个可能颠覆整个太阳系权力格局的古老外星秘密。';
-    } else if (part === 'scenePreset') {
-      result.value.scenePreset = '（新生成）红色沙漠覆盖的火星表面，点缀着饱经风霜的穹顶殖民地。空气中弥漫着铁锈和臭氧的味道，远处是巨大的轨道电梯。';
-    } else if (part === 'characterPreset') {
-      result.value.characterPreset = '（新生成）主角“蕾娜”：30多岁，身手矫健，穿着磨损的皮夹克，驾驶着一艘经过非法改装的星际飞船，眼神愤世嫉俗但内心渴望正义。';
-    } else if (part === 'shot' && index !== -1) {
-      result.value.shots[index] = {
-        timeline: result.value.shots[index].timeline, // Keep timeline the same
-        character: '（新）蕾娜',
-        shot: '（新）特写，蕾娜的电子义眼扫描着一个古老的石碑，数据流在她的视野中闪过。',
-        t2i_prompt: '（new）close up, female cyborg\'s glowing eye scanning an ancient alien monolith, data streams overlaying her vision, cinematic, detailed',
-        i2v_prompt: '（new）subtle glowing and data stream effects'
-      };
-    }
-  }, 1000);
-};
-
-const exportDataAsXLSX = () => {
-  if (!result.value) {
-    ElMessage.warning('没有可导出的内容！');
-    return;
-  }
-  try {
-    const wb = XLSX.utils.book_new();
-
-    // --- Create Info Worksheet with Styles ---
-    const infoData = [
-      { Category: '故事简介', Content: result.value.synopsis },
-      { Category: '场景预设', Content: result.value.scenePreset },
-      { Category: '人物预设', Content: result.value.characterPreset },
-    ];
-    const wsInfo = XLSX.utils.json_to_sheet(infoData, { skipHeader: true });
-    XLSX.utils.sheet_add_aoa(wsInfo, [['分类', '内容']], { origin: 'A1' });
-    wsInfo['!cols'] = [{ wch: 15 }, { wch: 80 }];
-    wsInfo['A1'].s = { font: { bold: true } };
-    wsInfo['B1'].s = { font: { bold: true } };
-    XLSX.utils.book_append_sheet(wb, wsInfo, 'Info');
-
-    // --- Create Shots Worksheet with Styles ---
-    const shotsData = result.value.shots.map(shot => ({
-      '时间轴': shot.timeline,
-      '人物': shot.character,
-      '镜头描述': shot.shot,
-      '文生图提示词': shot.t2i_prompt,
-      '图生视频提示词': shot.i2v_prompt,
-    }));
-    const wsShots = XLSX.utils.json_to_sheet(shotsData);
-    const shotsCols = [
-      { wch: 15 }, { wch: 20 }, { wch: 50 }, { wch: 60 }, { wch: 60 },
-    ];
-    wsShots['!cols'] = shotsCols;
-    const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1'];
-    headerCells.forEach(cell => {
-      if (wsShots[cell]) {
-        wsShots[cell].s = { font: { bold: true } };
-      }
-    });
-    XLSX.utils.book_append_sheet(wb, wsShots, 'Shots');
-
-    // --- Write the file with a sanitized, topic-based name ---
-    const sanitizeFilename = (name) => {
-      if (!name) return 'ai-script';
-      return name.replace(/[\/\\?%*:|"<>]/g, '_').substring(0, 50);
-    };
-    const filename = `${sanitizeFilename(form.topic)}.xlsx`;
-    XLSX.writeFile(wb, filename);
-
-    ElMessage.success({
-      message: `成功导出文件：${filename}`,
-      duration: 5000,
-    });
-
-  } catch (error) {
-    console.error('Failed to export data as XLSX:', error);
-    ElMessage.error('导出XLSX失败！');
-  }
-};
-
-const generateImageForRow = async (index) => {
-  const shot = result.value.shots[index];
-  if (!shot || !shot.t2i_prompt) {
-    ElMessage.warning('该镜头没有文生图提示词！');
-    return;
-  }
-  
-  console.log(`Generating image for shot ${index} with prompt:`, shot.t2i_prompt);
-  shot.isGeneratingImage = true;
-  shot.imageUrl = '';
-
-  // Simulate Text-to-Image API call
-  await new Promise(resolve => setTimeout(resolve, 2500));
-  
-  const seed = shot.t2i_prompt.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
-  const remoteUrl = `https://picsum.photos/seed/${seed}/1280/720`;
-  
-  if (projectPath.value) {
-    try {
-      const localPath = await window.electronAPI.downloadMedia({ url: remoteUrl, projectPath: projectPath.value, topic: form.topic });
-      shot.imageUrl = `file://${localPath}`;
-      ElMessage.success(`镜头 ${index + 1} 图片已生成并保存！`);
-    } catch (error) {
-      console.error('Failed to download image:', error);
-      ElMessage.error('图片下载失败！');
-      shot.imageUrl = remoteUrl; // Fallback to remote URL
-    }
-  } else {
-    shot.imageUrl = remoteUrl;
-    ElMessage.success(`镜头 ${index + 1} 图片生成成功！`);
-  }
-  shot.isGeneratingImage = false;
-};
-
-const generateVideoForRow = async (index) => {
-  const shot = result.value.shots[index];
-  if (!shot || !shot.imageUrl) {
-    ElMessage.warning('请先为该镜头生成图片！');
-    return;
-  }
-  
-  console.log(`Generating video for shot ${index} with prompt:`, shot.i2v_prompt);
-  shot.isGeneratingVideo = true;
-  shot.videoUrl = '';
-
-  // Simulate Image-to-Video API call
-  await new Promise(resolve => setTimeout(resolve, 5000));
-  
-  const remoteUrl = 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4';
-
-  if (projectPath.value) {
-    try {
-      const localPath = await window.electronAPI.downloadMedia({ url: remoteUrl, projectPath: projectPath.value, topic: form.topic });
-      shot.videoUrl = `file://${localPath}`;
-      ElMessage.success(`镜头 ${index + 1} 视频已生成并保存！`);
-    } catch (error) {
-      console.error('Failed to download video:', error);
-      ElMessage.error('视频下载失败！');
-      shot.videoUrl = remoteUrl; // Fallback to remote URL
-    }
-  } else {
-    shot.videoUrl = remoteUrl;
-    ElMessage.success(`镜头 ${index + 1} 视频生成成功！`);
-  }
-  shot.isGeneratingVideo = false;
-};
+  Object.assign(form, template.form)
+  showTemplateDialog.value = false
+  ElMessage.success(`模板 "${template.name}" 已应用`)
+}
 
 const saveProject = () => {
   if (!form.topic && !result.value) {
-    ElMessage.warning('没有可保存的内容！');
-    return;
+    ElMessage.warning('没有可保存的内容！')
+    return
   }
   try {
     const projectData = {
       form: form,
       result: result.value,
-    };
-    const dataStr = JSON.stringify(projectData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+      tableData: tableData.value
+    }
+    const dataStr = JSON.stringify(projectData, null, 2)
+    const blob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
     const sanitizeFilename = (name) => {
-      if (!name) return 'ai-project';
-      return name.replace(/[\/\\?%*:|"<>]/g, '_').substring(0, 50);
-    };
-    link.href = url;
-    link.download = `${sanitizeFilename(form.topic)}.aiproj.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    ElMessage.success('项目已保存！');
+      if (!name) return 'ai-project'
+      return name.replace(/[\/\\?%*:|"<>]/g, '_').substring(0, 50)
+    }
+    link.href = url
+    link.download = `${sanitizeFilename(form.topic)}.aiproj.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    ElMessage.success('项目已保存！')
   } catch (error) {
-    console.error('Failed to save project:', error);
-    ElMessage.error('项目保存失败！');
+    console.error('Failed to save project:', error)
+    ElMessage.error('项目保存失败！')
   }
-};
+}
 
 const loadProject = () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.aiproj.json,application/json';
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.aiproj.json,application/json'
   input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
     reader.onload = (res) => {
       try {
-        const projectData = JSON.parse(res.target.result);
+        const projectData = JSON.parse(res.target.result)
         if (projectData.form && projectData.result) {
-          // Manually update reactive object properties
-          Object.assign(form, projectData.form);
-          result.value = projectData.result;
-          ElMessage.success(`项目 "${form.topic}" 已加载！`);
+          Object.assign(form, projectData.form)
+          result.value = projectData.result
+          tableData.value = projectData.tableData || []
+          ElMessage.success(`项目 "${form.topic}" 已加载！`)
         } else {
-          ElMessage.error('无效的项目文件格式！');
+          ElMessage.error('无效的项目文件格式！')
         }
       } catch (error) {
-        console.error('Failed to load project:', error);
-        ElMessage.error('加载项目失败！');
+        console.error('Failed to load project:', error)
+        ElMessage.error('加载项目失败！')
       }
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-};
+    }
+    reader.readAsText(file)
+  }
+  input.click()
+}
 
 const selectProjectFolder = async () => {
-  const path = await window.electronAPI.selectDirectory();
+  const path = await window.electronAPI.selectDirectory()
   if (path) {
-    projectPath.value = path;
-    ElMessage.success(`项目文件夹已设置为：${path}`);
+    projectPath.value = path
+    ElMessage.success(`项目文件夹已设置为：${path}`)
   }
-};
+}
+
+onMounted(() => {
+  const savedTemplates = localStorage.getItem('aiScriptTemplates')
+  if (savedTemplates) {
+    templates.value = JSON.parse(savedTemplates)
+  }
+})
 </script>
 
 <style scoped>
 .main-layout {
   height: 100%;
+  padding: 20px;
 }
 .control-panel, .result-container {
-  /* height: calc(100vh - 108px); */ /* Removed fixed height to allow natural flow */
   display: flex;
   flex-direction: column;
-}
-.result-container {
-  /* justify-content: center; */ /* Removed to allow content to start from top */
 }
 .placeholder {
   display: flex;
@@ -659,12 +546,6 @@ const selectProjectFolder = async () => {
 }
 .result-card {
   margin-bottom: 20px;
-  /* height: 150px; */ /* Removed fixed height to allow content to determine height */
-  /* overflow-y: auto; */ /* Removed overflow to prevent scrollbars */
-}
-.result-text {
-  font-size: 14px;
-  line-height: 1.6;
 }
 .result-text-input .el-textarea__inner {
   box-shadow: none !important;
@@ -755,5 +636,18 @@ const selectProjectFolder = async () => {
 }
 .details-collapse .el-collapse-item__content {
   padding-bottom: 0;
+}
+.optimization-panel {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 1200px;
+}
+
+@media (max-width: 768px) {
+  .optimization-panel {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

@@ -16,58 +16,105 @@
           text-color="var(--text-color-primary)"
           @select="handleMenuSelect"
         >
-          <el-menu-item index="ai-script-writer">
-            <el-icon><Cpu /></el-icon>
-            <template #title>AI 创作</template>
-          </el-menu-item>
-          <el-menu-item index="image-tools">
-            <el-icon><Picture /></el-icon>
-            <template #title>图片工具</template>
-          </el-menu-item>
-          <el-menu-item index="video-tools">
-            <el-icon><VideoCamera /></el-icon>
-            <template #title>视频工具</template>
-          </el-menu-item>
-          <el-menu-item index="audio-tools">
-            <el-icon><Microphone /></el-icon>
-            <template #title>音频工具</template>
-          </el-menu-item>
-          <el-menu-item index="strategy-management">
-            <el-icon><DataLine /></el-icon>
-            <template #title>策略管理</template>
-          </el-menu-item>
-          <el-menu-item index="auto-editor">
-            <el-icon><Scissor /></el-icon>
-            <template #title>自动混剪</template>
-          </el-menu-item>
-          <el-menu-item index="cover-designer">
-            <el-icon><Picture /></el-icon>
-            <template #title>封面设计</template>
-          </el-menu-item>
-          <el-menu-item index="video-editor">
-            <el-icon><VideoCamera /></el-icon>
-            <template #title>视频剪辑</template>
-          </el-menu-item>
-          <el-menu-item index="voice-synthesizer">
-            <el-icon><Microphone /></el-icon>
-            <template #title>语音合成</template>
-          </el-menu-item>
-          <el-menu-item index="platform-publisher">
-            <el-icon><Upload /></el-icon>
-            <template #title>平台发布</template>
-          </el-menu-item>
-          <el-menu-item index="ai-image-generator">
-            <el-icon><Picture /></el-icon>
-            <template #title>AI 视觉</template>
-          </el-menu-item>
-          <el-menu-item index="hot-tracker">
-            <el-icon><TrendCharts /></el-icon>
-            <template #title>热点追踪</template>
-          </el-menu-item>
-          <el-menu-item index="plugin-market">
-            <el-icon><Grid /></el-icon>
-            <template #title>插件市场</template>
-          </el-menu-item>
+          <!-- 内容创作 -->
+          <el-sub-menu index="content-creation">
+            <template #title>
+              <el-icon><Cpu /></el-icon>
+              <span>内容创作</span>
+            </template>
+            <el-menu-item index="ai-script-writer">
+              <el-icon><Edit /></el-icon>
+              <template #title>AI 写作</template>
+            </el-menu-item>
+            <el-menu-item index="ai-image-generator">
+              <el-icon><Picture /></el-icon>
+              <template #title>AI 绘图</template>
+            </el-menu-item>
+            <el-menu-item index="voice-synthesizer">
+              <el-icon><Microphone /></el-icon>
+              <template #title>语音合成</template>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- 媒体处理 -->
+          <el-sub-menu index="media-processing">
+            <template #title>
+              <el-icon><VideoCamera /></el-icon>
+              <span>媒体处理</span>
+            </template>
+            <el-menu-item index="image-tools">
+              <el-icon><Picture /></el-icon>
+              <template #title>图片处理</template>
+            </el-menu-item>
+            <el-menu-item index="video-tools">
+              <el-icon><VideoPlay /></el-icon>
+              <template #title>视频处理</template>
+            </el-menu-item>
+            <el-menu-item index="audio-tools">
+              <el-icon><Headset /></el-icon>
+              <template #title>音频处理</template>
+            </el-menu-item>
+            <el-menu-item index="auto-editor">
+              <el-icon><Scissor /></el-icon>
+              <template #title>智能剪辑</template>
+            </el-menu-item>
+            <el-menu-item index="video-editor">
+              <el-icon><EditPen /></el-icon>
+              <template #title>专业剪辑</template>
+            </el-menu-item>
+            <el-menu-item index="cover-designer">
+              <el-icon><Postcard /></el-icon>
+              <template #title>封面设计</template>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- 运营工具 -->
+          <el-sub-menu index="operations">
+            <template #title>
+              <el-icon><TrendCharts /></el-icon>
+              <span>运营工具</span>
+            </template>
+            <el-menu-item index="strategy-management">
+              <el-icon><DataLine /></el-icon>
+              <template #title>内容策略</template>
+            </el-menu-item>
+            <el-menu-item index="hot-tracker">
+              <el-icon><TrendCharts /></el-icon>
+              <template #title>热点追踪</template>
+            </el-menu-item>
+            <el-menu-item index="smart-recommendations">
+              <el-icon><Star /></el-icon>
+              <template #title>智能推荐</template>
+            </el-menu-item>
+            <el-menu-item index="platform-publisher">
+              <el-icon><Upload /></el-icon>
+              <template #title>一键发布</template>
+            </el-menu-item>
+          </el-sub-menu>
+
+          <!-- 系统管理 -->
+          <el-sub-menu index="system">
+            <template #title>
+              <el-icon><Setting /></el-icon>
+              <span>系统管理</span>
+            </template>
+            <el-menu-item index="plugin-market">
+              <el-icon><Grid /></el-icon>
+              <template #title>插件中心</template>
+            </el-menu-item>
+            <el-menu-item index="analytics-dashboard">
+              <el-icon><TrendCharts /></el-icon>
+              <template #title>数据分析</template>
+            </el-menu-item>
+            <el-menu-item index="cache-manager">
+              <el-icon><Monitor /></el-icon>
+              <template #title>性能优化</template>
+            </el-menu-item>
+            <el-menu-item index="feature-manager">
+              <el-icon><Operation /></el-icon>
+              <template #title>功能设置</template>
+            </el-menu-item>
+          </el-sub-menu>
         </el-menu>
       </el-aside>
       <el-container>
@@ -76,10 +123,15 @@
             <el-icon class="collapse-icon" @click="toggleCollapse">
               <component :is="isCollapsed ? 'Expand' : 'Fold'" />
             </el-icon>
-            <!-- Other header content can go here -->
+            <h1>🎬 AI自媒体工具箱</h1>
           </div>
           <div class="user-info">
-            <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+            <NotificationCenter />
+            <el-tag type="success" effect="dark" style="margin-left: 10px;">
+              <el-icon><Star /></el-icon>
+              高级会员版
+            </el-tag>
+            <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" style="margin-left: 10px;" />
             <span style="margin-left: 10px;">Creative User</span>
           </div>
         </el-header>
@@ -105,21 +157,35 @@ import {
   Fold, 
   MagicStick,
   Upload,
-  TrendCharts
+  TrendCharts,
+  Setting,
+  Edit,
+  VideoPlay,
+  Headset,
+  EditPen,
+  Postcard,
+  Star,
+  Monitor,
+  Operation
 } from '@element-plus/icons-vue';
+import AiImageGenerator from './components/AiImageGenerator.vue'
+import AnalyticsDashboard from './components/AnalyticsDashboard.vue'
+import FeatureManager from './components/FeatureManager.vue';
 import AiScriptWriter from './components/AiScriptWriter.vue';
-import ImageTools from './components/ImageTools.vue';
-import VideoTools from './components/VideoTools.vue';
 import AudioTools from './components/AudioTools.vue';
 import AutoEditor from './components/AutoEditor.vue';
+import CacheManager from './components/CacheManager.vue';
 import CoverDesigner from './components/CoverDesigner.vue';
-import VideoEditor from './components/VideoEditor.vue';
-import VoiceSynthesizer from './components/VoiceSynthesizer.vue';
-import PlatformPublisher from './components/PlatformPublisher.vue';
-import AiImageGenerator from './components/AiImageGenerator.vue';
 import HotTracker from './components/HotTracker.vue';
-import StrategyManager from './components/StrategyManager.vue';
+import ImageTools from './components/ImageTools.vue';
+import NotificationCenter from './components/NotificationCenter.vue';
+import PlatformPublisher from './components/PlatformPublisher.vue';
 import PluginMarket from './components/PluginMarket.vue';
+import SmartRecommendations from './components/SmartRecommendations.vue';
+import StrategyManager from './components/StrategyManager.vue';
+import VideoEditor from './components/VideoEditor.vue';
+import VideoTools from './components/VideoTools.vue';
+import VoiceSynthesizer from './components/VoiceSynthesizer.vue';
 
 // --- State for Collapsible Sidebar ---
 const isCollapsed = ref(false);
@@ -149,9 +215,13 @@ const componentMap = {
   'voice-synthesizer': VoiceSynthesizer,
   'platform-publisher': PlatformPublisher,
   'ai-image-generator': AiImageGenerator,
+  'analytics-dashboard': AnalyticsDashboard,
+  'feature-manager': FeatureManager,
   'hot-tracker': HotTracker,
   'strategy-management': StrategyManager,
   'plugin-market': PluginMarket,
+  'smart-recommendations': SmartRecommendations,
+  'cache-manager': CacheManager,
 };
 const handleMenuSelect = (index) => {
   activeComponent.value = componentMap[index] || PlaceholderComponent;

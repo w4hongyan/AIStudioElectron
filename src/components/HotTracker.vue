@@ -276,12 +276,16 @@
         </el-button>
       </template>
     </el-dialog>
+    
+    <!-- 智能推荐侧边栏 -->
+    <SmartRecommendations />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Refresh, CaretTop, CaretBottom, Minus, View, Star, ChatDotRound, Share, Edit, Delete, TrendCharts } from '@element-plus/icons-vue'
+import { Refresh, CaretTop, CaretBottom, View, Star, ChatDotRound, Share, Edit, Minus } from '@element-plus/icons-vue'
+import SmartRecommendations from './SmartRecommendations.vue'
 
 // 数据状态
 const platforms = ref([
