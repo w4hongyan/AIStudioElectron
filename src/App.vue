@@ -12,10 +12,14 @@
           active-text-color="var(--accent-color)"
           background-color="transparent"
           class="el-menu-vertical-demo"
-          default-active="ai-script-writer"
+          default-active="dashboard"
           text-color="var(--text-color-primary)"
           @select="handleMenuSelect"
         >
+          <el-menu-item index="dashboard">
+            <el-icon><Monitor /></el-icon>
+            <template #title>功能总览</template>
+          </el-menu-item>
           <!-- 内容创作 -->
           <el-sub-menu index="content-creation">
             <template #title>
@@ -33,6 +37,10 @@
             <el-menu-item index="voice-synthesizer">
               <el-icon><Microphone /></el-icon>
               <template #title>语音合成</template>
+            </el-menu-item>
+            <el-menu-item index="content-optimizer">
+              <el-icon><MagicStick /></el-icon>
+              <template #title>爆款优化</template>
             </el-menu-item>
           </el-sub-menu>
 
@@ -136,7 +144,7 @@
           </div>
         </el-header>
         <el-main class="main-content">
-          <component :is="activeComponent" />
+          <component :is="activeComponent" @navigate="handleMenuSelect" />
         </el-main>
       </el-container>
     </el-container>
@@ -186,6 +194,8 @@ import StrategyManager from './components/StrategyManager.vue';
 import VideoEditor from './components/VideoEditor.vue';
 import VideoTools from './components/VideoTools.vue';
 import VoiceSynthesizer from './components/VoiceSynthesizer.vue';
+import ContentOptimizer from './components/ContentOptimizer.vue';
+import Dashboard from './components/Dashboard.vue';
 
 // --- State for Collapsible Sidebar ---
 const isCollapsed = ref(false);
@@ -203,8 +213,9 @@ const PlaceholderComponent = {
     </el-card>
   `
 };
-const activeComponent = shallowRef(AiScriptWriter);
+const activeComponent = shallowRef(Dashboard);
 const componentMap = {
+  'dashboard': Dashboard,
   'ai-script-writer': AiScriptWriter,
   'image-tools': ImageTools,
   'video-tools': VideoTools,
@@ -222,6 +233,7 @@ const componentMap = {
   'plugin-market': PluginMarket,
   'smart-recommendations': SmartRecommendations,
   'cache-manager': CacheManager,
+  'content-optimizer': ContentOptimizer,
 };
 const handleMenuSelect = (index) => {
   activeComponent.value = componentMap[index] || PlaceholderComponent;

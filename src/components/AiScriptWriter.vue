@@ -1,12 +1,15 @@
 <template>
-  <div>
-    <el-row :gutter="24" class="main-layout">
+  <div class="page-container">
+    <h1 class="page-title">AI 影视化脚本创作</h1>
+    <p class="page-subtitle">从一个想法到导演级分镜脚本，AI 全程助力。</p>
+
+    <el-row :gutter="24">
       <!-- Left Column: Control Panel -->
-      <el-col :span="6">
+      <el-col :span="7">
         <el-card class="feature-card control-panel">
           <template #header>
             <div class="card-header">
-              <span>🎬 AI 影视化生产力工具</span>
+              <span>创作设置</span>
             </div>
           </template>
           
@@ -159,7 +162,7 @@
       </el-col>
 
       <!-- Right Column: Results -->
-      <el-col :span="18">
+      <el-col :span="17">
         <div class="result-container" v-loading="loading" element-loading-text="AI思考中，请稍候...">
           <div v-if="!result" class="placeholder">
             <el-empty description="在左侧输入创作要求，开始您的AI影视之旅" />
@@ -256,21 +259,23 @@
                 </el-table-column>
               </el-table>
             </el-card>
+            
+            <div class="optimization-panel">
+              <h3 class="optimization-title">优化工具</h3>
+              <el-row :gutter="20">
+                <el-col :span="12"><SmartRecommendations /></el-col>
+                <el-col :span="12"><CacheManager /></el-col>
+              </el-row>
+            </div>
           </div>
         </div>
       </el-col>
     </el-row>
-
-    <!-- 智能推荐和性能优化 -->
-    <div class="optimization-panel">
-      <SmartRecommendations />
-      <CacheManager />
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { MagicStick, FolderOpened, FolderAdd, Search, Refresh, Download, Picture, PictureRounded, VideoCamera } from '@element-plus/icons-vue'
 import SmartRecommendations from './SmartRecommendations.vue'
@@ -514,13 +519,43 @@ onMounted(() => {
   if (savedTemplates) {
     templates.value = JSON.parse(savedTemplates)
   }
+
+  // Load last session from localStorage
+  const savedForm = localStorage.getItem('aiScriptWriterForm')
+  if (savedForm) {
+    Object.assign(form, JSON.parse(savedForm))
+    ElMessage.success('已恢复上次的编辑内容')
+  }
 })
+
+// Debounce function
+const debounce = (fn, delay) => {
+  let timeoutId
+  return (...args) => {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => fn(...args), delay)
+  }
+}
+
+// Watch for form changes and save to localStorage
+watch(form, debounce((newForm) => {
+  localStorage.setItem('aiScriptWriterForm', JSON.stringify(newForm))
+}, 500))
 </script>
 
 <style scoped>
-.main-layout {
-  height: 100%;
+.page-container {
   padding: 20px;
+}
+.page-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  margin-bottom: 20px;
 }
 .control-panel, .result-container {
   display: flex;
@@ -638,16 +673,14 @@ onMounted(() => {
   padding-bottom: 0;
 }
 .optimization-panel {
-  margin-top: 30px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  max-width: 1200px;
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #fafafa;
+  border-radius: 8px;
 }
-
-@media (max-width: 768px) {
-  .optimization-panel {
-    grid-template-columns: 1fr;
-  }
+.optimization-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
 }
 </style>
