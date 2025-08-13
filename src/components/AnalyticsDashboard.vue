@@ -191,14 +191,14 @@ onMounted(() => {
   loadData()
 })
 
-// 定时刷新数据
+// 定时刷新数据 - 降低更新频率减少性能影响
 let refreshInterval
 onMounted(() => {
   refreshInterval = setInterval(() => {
-    // 模拟实时数据更新
+    // 模拟实时数据更新，降低频率减少性能影响
     totalViews.value += Math.floor(Math.random() * 100)
     totalEngagement.value += Math.floor(Math.random() * 10)
-  }, 5000)
+  }, 15000) // 从5秒改为15秒更新一次
 })
 
 onUnmounted(() => {

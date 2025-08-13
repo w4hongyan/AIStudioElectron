@@ -435,11 +435,11 @@ let performanceInterval
 
 const startPerformanceMonitoring = () => {
   performanceInterval = setInterval(() => {
-    // 模拟性能波动
+    // 模拟性能波动，降低更新频率减少性能影响
     systemStats.value.cpuUsage = Math.max(20, Math.min(90, systemStats.value.cpuUsage + (Math.random() - 0.5) * 5))
     systemStats.value.memoryUsage = Math.max(40, Math.min(85, systemStats.value.memoryUsage + (Math.random() - 0.5) * 3))
     systemStats.value.responseTime = Math.max(200, Math.min(800, systemStats.value.responseTime + (Math.random() - 0.5) * 50))
-  }, 5000)
+  }, 15000) // 从5秒改为15秒更新一次
 }
 
 // 自动缓存清理

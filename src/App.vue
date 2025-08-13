@@ -12,7 +12,7 @@
           active-text-color="var(--accent-color)"
           background-color="transparent"
           class="el-menu-vertical-demo"
-          default-active="dashboard"
+          :default-active="$route.path.slice(1) || 'dashboard'"
           text-color="var(--text-color-primary)"
           @select="handleMenuSelect"
         >
@@ -26,22 +26,22 @@
               <el-icon><Cpu /></el-icon>
               <span>内容创作</span>
             </template>
-            <el-menu-item index="ai-script-writer">
-              <el-icon><Edit /></el-icon>
-              <template #title>AI 写作</template>
-            </el-menu-item>
+            <el-menu-item index="ai-writer">
+                <el-icon><Edit /></el-icon>
+                <template #title>AI 写作</template>
+              </el-menu-item>
             <el-menu-item index="ai-image-generator">
-              <el-icon><Picture /></el-icon>
-              <template #title>AI 绘图</template>
-            </el-menu-item>
+                <el-icon><Picture /></el-icon>
+                <template #title>AI 绘图</template>
+              </el-menu-item>
             <el-menu-item index="voice-synthesizer">
-              <el-icon><Microphone /></el-icon>
-              <template #title>语音合成</template>
-            </el-menu-item>
+                <el-icon><Microphone /></el-icon>
+                <template #title>语音合成</template>
+              </el-menu-item>
             <el-menu-item index="content-optimizer">
-              <el-icon><MagicStick /></el-icon>
-              <template #title>爆款优化</template>
-            </el-menu-item>
+                <el-icon><MagicStick /></el-icon>
+                <template #title>爆款优化</template>
+              </el-menu-item>
           </el-sub-menu>
 
           <!-- 媒体处理 -->
@@ -51,29 +51,29 @@
               <span>媒体处理</span>
             </template>
             <el-menu-item index="image-tools">
-              <el-icon><Picture /></el-icon>
-              <template #title>图片处理</template>
-            </el-menu-item>
+                <el-icon><Picture /></el-icon>
+                <template #title>图片处理</template>
+              </el-menu-item>
             <el-menu-item index="video-tools">
-              <el-icon><VideoPlay /></el-icon>
-              <template #title>视频处理</template>
-            </el-menu-item>
+                <el-icon><VideoPlay /></el-icon>
+                <template #title>视频处理</template>
+              </el-menu-item>
             <el-menu-item index="audio-tools">
-              <el-icon><Headset /></el-icon>
-              <template #title>音频处理</template>
-            </el-menu-item>
+                <el-icon><Headset /></el-icon>
+                <template #title>音频处理</template>
+              </el-menu-item>
             <el-menu-item index="auto-editor">
-              <el-icon><Scissor /></el-icon>
-              <template #title>智能剪辑</template>
-            </el-menu-item>
+                <el-icon><Scissor /></el-icon>
+                <template #title>智能剪辑</template>
+              </el-menu-item>
             <el-menu-item index="video-editor">
-              <el-icon><EditPen /></el-icon>
-              <template #title>专业剪辑</template>
-            </el-menu-item>
+                <el-icon><EditPen /></el-icon>
+                <template #title>专业剪辑</template>
+              </el-menu-item>
             <el-menu-item index="cover-designer">
-              <el-icon><Postcard /></el-icon>
-              <template #title>封面设计</template>
-            </el-menu-item>
+                <el-icon><Postcard /></el-icon>
+                <template #title>封面设计</template>
+              </el-menu-item>
           </el-sub-menu>
 
           <!-- 运营工具 -->
@@ -82,22 +82,30 @@
               <el-icon><TrendCharts /></el-icon>
               <span>运营工具</span>
             </template>
+            <el-menu-item index="hot-predictor">
+                <el-icon><TrendCharts /></el-icon>
+                <template #title>AI热点预测</template>
+              </el-menu-item>
+            <el-menu-item index="batch-processor">
+                <el-icon><DataAnalysis /></el-icon>
+                <template #title>智能批量处理</template>
+              </el-menu-item>
             <el-menu-item index="strategy-management">
-              <el-icon><DataLine /></el-icon>
-              <template #title>内容策略</template>
-            </el-menu-item>
+                <el-icon><DataLine /></el-icon>
+                <template #title>内容策略</template>
+              </el-menu-item>
             <el-menu-item index="hot-tracker">
-              <el-icon><TrendCharts /></el-icon>
-              <template #title>热点追踪</template>
-            </el-menu-item>
+                <el-icon><TrendCharts /></el-icon>
+                <template #title>热点追踪</template>
+              </el-menu-item>
             <el-menu-item index="smart-recommendations">
-              <el-icon><Star /></el-icon>
-              <template #title>智能推荐</template>
-            </el-menu-item>
+                <el-icon><Star /></el-icon>
+                <template #title>智能推荐</template>
+              </el-menu-item>
             <el-menu-item index="platform-publisher">
-              <el-icon><Upload /></el-icon>
-              <template #title>一键发布</template>
-            </el-menu-item>
+                <el-icon><Upload /></el-icon>
+                <template #title>一键发布</template>
+              </el-menu-item>
           </el-sub-menu>
 
           <!-- 系统管理 -->
@@ -107,21 +115,21 @@
               <span>系统管理</span>
             </template>
             <el-menu-item index="plugin-market">
-              <el-icon><Grid /></el-icon>
-              <template #title>插件中心</template>
-            </el-menu-item>
+                <el-icon><Grid /></el-icon>
+                <template #title>插件中心</template>
+              </el-menu-item>
             <el-menu-item index="analytics-dashboard">
-              <el-icon><TrendCharts /></el-icon>
-              <template #title>数据分析</template>
-            </el-menu-item>
+                <el-icon><TrendCharts /></el-icon>
+                <template #title>数据分析</template>
+              </el-menu-item>
             <el-menu-item index="cache-manager">
-              <el-icon><Monitor /></el-icon>
-              <template #title>性能优化</template>
-            </el-menu-item>
+                <el-icon><Monitor /></el-icon>
+                <template #title>性能优化</template>
+              </el-menu-item>
             <el-menu-item index="feature-manager">
-              <el-icon><Operation /></el-icon>
-              <template #title>功能设置</template>
-            </el-menu-item>
+                <el-icon><Operation /></el-icon>
+                <template #title>功能设置</template>
+              </el-menu-item>
           </el-sub-menu>
         </el-menu>
       </el-aside>
@@ -144,8 +152,8 @@
           </div>
         </el-header>
         <el-main class="main-content">
-          <component :is="activeComponent" @navigate="handleMenuSelect" />
-        </el-main>
+      <router-view />
+    </el-main>
       </el-container>
     </el-container>
   </div>
@@ -153,6 +161,7 @@
 
 <script setup>
 import { ref, shallowRef, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { 
   Cpu, 
   Picture, 
@@ -174,7 +183,8 @@ import {
   Postcard,
   Star,
   Monitor,
-  Operation
+  Operation,
+  DataAnalysis
 } from '@element-plus/icons-vue';
 import AiImageGenerator from './components/AiImageGenerator.vue'
 import AnalyticsDashboard from './components/AnalyticsDashboard.vue'
@@ -196,6 +206,8 @@ import VideoTools from './components/VideoTools.vue';
 import VoiceSynthesizer from './components/VoiceSynthesizer.vue';
 import ContentOptimizer from './components/ContentOptimizer.vue';
 import Dashboard from './components/Dashboard.vue';
+import HotPredictor from './components/HotPredictor.vue';
+import SmartBatchProcessor from './components/SmartBatchProcessor.vue';
 
 // --- State for Collapsible Sidebar ---
 const isCollapsed = ref(false);
@@ -204,39 +216,12 @@ const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value;
 };
 
+// --- Router Setup ---
+const router = useRouter();
+
 // --- State for View Switching ---
-const PlaceholderComponent = {
-  template: `
-    <el-card class="welcome-card">
-      <h2>功能正在开发中...</h2>
-      <p>敬请期待！</p>
-    </el-card>
-  `
-};
-const activeComponent = shallowRef(Dashboard);
-const componentMap = {
-  'dashboard': Dashboard,
-  'ai-script-writer': AiScriptWriter,
-  'image-tools': ImageTools,
-  'video-tools': VideoTools,
-  'audio-tools': AudioTools,
-  'auto-editor': AutoEditor,
-  'cover-designer': CoverDesigner,
-  'video-editor': VideoEditor,
-  'voice-synthesizer': VoiceSynthesizer,
-  'platform-publisher': PlatformPublisher,
-  'ai-image-generator': AiImageGenerator,
-  'analytics-dashboard': AnalyticsDashboard,
-  'feature-manager': FeatureManager,
-  'hot-tracker': HotTracker,
-  'strategy-management': StrategyManager,
-  'plugin-market': PluginMarket,
-  'smart-recommendations': SmartRecommendations,
-  'cache-manager': CacheManager,
-  'content-optimizer': ContentOptimizer,
-};
 const handleMenuSelect = (index) => {
-  activeComponent.value = componentMap[index] || PlaceholderComponent;
+  router.push(`/${index}`)
 };
 </script>
 

@@ -277,16 +277,16 @@ let updateInterval
 
 const startRealTimeUpdates = () => {
   updateInterval = setInterval(() => {
-    // 随机更新分数
+    // 随机更新分数 - 降低更新频率减少性能影响
     bestTimes.value.forEach(slot => {
-      slot.score = Math.max(50, Math.min(100, slot.score + (Math.random() - 0.5) * 10))
+      slot.score = Math.max(50, Math.min(100, slot.score + (Math.random() - 0.5) * 5))
     })
     
     // 随机更新标签分数
     recommendedTags.value.hot.forEach(tag => {
-      tag.score = Math.max(60, Math.min(100, tag.score + (Math.random() - 0.5) * 5))
+      tag.score = Math.max(60, Math.min(100, tag.score + (Math.random() - 0.5) * 3))
     })
-  }, 10000) // 每10秒更新一次
+  }, 30000) // 每30秒更新一次，减少性能影响
 }
 
 onMounted(() => {
