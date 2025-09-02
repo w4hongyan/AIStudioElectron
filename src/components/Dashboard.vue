@@ -21,27 +21,72 @@
       </div>
     </div>
 
-    <!-- 快捷功能入口 - 与左侧菜单重点功能对应 -->
+    <!-- 🎯 新手一键创作流程 -->
     <div class="quick-actions">
-      <div class="action-card primary" @click="openHotPredictor">
+      <!-- 核心场景：我今天要发什么？ -->
+      <div class="action-card primary" @click="startQuickCreation">
+        <div class="action-icon">
+          <el-icon :size="32"><Lightning /></el-icon>
+        </div>
+        <div class="action-content">
+          <h3>🚀 一键创作</h3>
+          <p>3分钟完成今日内容创作</p>
+          <el-tag type="success" size="small">新手推荐</el-tag>
+        </div>
+      </div>
+      
+      <!-- 核心场景：什么内容最火？ -->
+      <div class="action-card secondary" @click="openTrendingIdeas">
         <div class="action-icon">
           <el-icon :size="32"><TrendCharts /></el-icon>
         </div>
         <div class="action-content">
-          <h3>🔥 AI热点预测</h3>
-          <p>基于AI算法预测未来7天热点趋势</p>
-          <el-tag type="success" size="small">新功能</el-tag>
+          <h3>🔥 今日热点</h3>
+          <p>AI推荐10个爆款选题</p>
+          <el-tag type="warning" size="small">实时更新</el-tag>
         </div>
       </div>
       
-      <div class="action-card secondary" @click="openBatchProcessor">
+      <!-- 核心场景：如何批量生产？ -->
+      <div class="action-card secondary" @click="openSmartWorkflow">
         <div class="action-icon">
-          <el-icon :size="32"><DataAnalysis /></el-icon>
+          <el-icon :size="32"><MagicStick /></el-icon>
         </div>
         <div class="action-content">
-          <h3>🚀 智能批量处理</h3>
-          <p>AI驱动的批量内容生成，效率提升300%</p>
-          <el-tag type="warning" size="small">热门</el-tag>
+          <h3>⚡ 智能工作流</h3>
+          <p>1小时生成1周内容</p>
+          <el-tag type="info" size="small">效率神器</el-tag>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 📊 个性化数据洞察 -->
+    <div class="personal-insights">
+      <div class="insight-card">
+        <h4>📈 你的创作效率</h4>
+        <div class="efficiency-meter">
+          <el-progress 
+            type="circle" 
+            :percentage="85" 
+            :width="80"
+            status="success">
+            <template #default>85%</template>
+          </el-progress>
+          <div class="efficiency-text">
+            <span>比同行快3.2倍</span>
+            <small>本周已节省4.5小时</small>
+          </div>
+        </div>
+      </div>
+      
+      <div class="insight-card">
+        <h4>🎯 最佳发布时间</h4>
+        <div class="optimal-time">
+          <el-icon :size="24"><Clock /></el-icon>
+          <div>
+            <strong>今晚 19:30-20:30</strong>
+            <small>预计曝光量提升240%</small>
+          </div>
         </div>
       </div>
     </div>
@@ -348,11 +393,15 @@ const featureGroups = ref([
 ])
 
 // 方法
-const openHotPredictor = () => {
+const startQuickCreation = () => {
+  router.push('/quick-creation')
+}
+
+const openTrendingIdeas = () => {
   router.push('/hot-predictor')
 }
 
-const openBatchProcessor = () => {
+const openSmartWorkflow = () => {
   router.push('/batch-processor')
 }
 

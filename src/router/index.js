@@ -12,12 +12,7 @@ import PluginMarket from '../components/PluginMarket.vue'
 const routes = [
   {
     path: '/',
-    name: 'Dashboard',
-    component: Dashboard,
-    meta: {
-      title: '功能总览',
-      icon: 'dashboard'
-    }
+    redirect: '/dashboard'
   },
   {
     path: '/dashboard',
@@ -61,11 +56,11 @@ const routes = [
   {
     path: '/hot-tracker',
     name: 'HotTracker',
-    component: HotTracker,
+    component: () => import('../components/EnhancedHotTracker.vue'),
     meta: {
-      title: '热点追踪',
+      title: '智能热点',
       icon: 'trend-charts',
-      description: '实时监控全网热点'
+      description: 'AI驱动的个性化热点发现'
     }
   },
   {
@@ -199,6 +194,16 @@ const routes = [
     }
   },
   {
+    path: '/ai-script-writer',
+    name: 'AiScriptWriter',
+    component: () => import('../components/AiScriptWriter.vue'),
+    meta: {
+      title: 'AI脚本编写器',
+      icon: 'edit-pen',
+      description: 'AI驱动的影视脚本创作工具'
+    }
+  },
+  {
     path: '/feature-manager',
     name: 'FeatureManager',
     component: () => import('../components/FeatureManager.vue'),
@@ -206,6 +211,16 @@ const routes = [
       title: '功能设置',
       icon: 'operation',
       description: '功能管理与配置'
+    }
+  },
+  {
+    path: '/quick-creation',
+    name: 'QuickCreation',
+    component: () => import('../components/QuickCreation.vue'),
+    meta: {
+      title: '一键创作',
+      icon: 'lightning',
+      description: '3分钟完成今日内容创作'
     }
   },
   {

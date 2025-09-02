@@ -239,7 +239,7 @@ class MemoryMonitor {
     }
     
     // 强制垃圾回收（仅在Node.js环境中）
-    if (typeof global !== 'undefined' && global.gc) {
+    if (typeof window !== 'undefined' && typeof global !== 'undefined' && global.gc) {
       global.gc()
     }
   }
@@ -275,7 +275,7 @@ class MemoryMonitor {
     })
     
     // 强制垃圾回收
-    if (global.gc) {
+    if (typeof window !== 'undefined' && typeof global !== 'undefined' && global.gc) {
       global.gc()
     }
   }

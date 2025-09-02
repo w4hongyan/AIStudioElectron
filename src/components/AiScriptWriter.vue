@@ -132,6 +132,53 @@
               <el-input-number v-model="form.shots" :min="3" :max="20" style="width: 100%;" />
             </el-form-item>
             
+            <el-form-item label="分镜脚本模式">
+              <el-switch v-model="form.storyboardMode" active-text="启用分镜模式" inactive-text="标准模式" />
+            </el-form-item>
+            
+            <el-collapse v-model="storyboardCollapse" class="storyboard-collapse" v-if="form.storyboardMode">
+              <el-collapse-item title="🎬 分镜脚本设置" name="storyboard">
+                <el-form-item label="画面风格描述">
+                  <el-input
+                    v-model="form.visualStyle"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="例如：赛博朋克霓虹灯光、电影级景深、4K超清画质"
+                  />
+                </el-form-item>
+                <el-form-item label="镜头运动方式">
+                  <el-select v-model="form.cameraMovement" placeholder="选择镜头运动" style="width: 100%;">
+                    <el-option label="静态镜头" value="static" />
+                    <el-option label="推拉镜头" value="push_pull" />
+                    <el-option label="摇摄镜头" value="pan" />
+                    <el-option label="跟拍镜头" value="tracking" />
+                    <el-option label="旋转镜头" value="rotation" />
+                    <el-option label="升降镜头" value="crane" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="光影效果">
+                  <el-select v-model="form.lightingEffect" placeholder="选择光影效果" style="width: 100%;">
+                    <el-option label="自然光" value="natural" />
+                    <el-option label="戏剧性光影" value="dramatic" />
+                    <el-option label="霓虹灯光" value="neon" />
+                    <el-option label="逆光剪影" value="backlight" />
+                    <el-option label="柔光滤镜" value="soft" />
+                    <el-option label="硬光对比" value="hard" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="色彩调性">
+                  <el-select v-model="form.colorTone" placeholder="选择色彩调性" style="width: 100%;">
+                    <el-option label="冷色调" value="cool" />
+                    <el-option label="暖色调" value="warm" />
+                    <el-option label="高对比度" value="high_contrast" />
+                    <el-option label="低饱和度" value="desaturated" />
+                    <el-option label="赛博朋克" value="cyberpunk" />
+                    <el-option label="复古胶片" value="vintage" />
+                  </el-select>
+                </el-form-item>
+              </el-collapse-item>
+            </el-collapse>
+            
             <el-form-item>
               <el-row :gutter="10" style="width: 100%;">
                 <el-col :span="12">
@@ -168,41 +215,118 @@
             <el-empty description="在左侧输入创作要求，开始您的AI影视之旅" />
           </div>
           <div v-else>
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-card class="result-card">
-                  <template #header>
-                    <div class="card-header-content">
-                      <span>故事简介</span>
-                      <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('synopsis')" />
+            <!-- 标准模式结果 -->
+            <div v-if="!form.storyboardMode">
+              <el-row :gutter="20">
+                <el-col :span="8">
+                  <el-card class="result-card">
+                    <template #header>
+                      <div class="card-header-content">
+                        <span>故事简介</span>
+                        <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('synopsis')" />
+                      </div>
+                    </template>
+                    <el-input v-model="result.synopsis" type="textarea" autosize class="result-text-input" />
+                  </el-card>
+                </el-col>
+                <el-col :span="8">
+                  <el-card class="result-card">
+                    <template #header>
+                      <div class="card-header-content">
+                        <span>场景预设</span>
+                        <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('scenePreset')" />
+                      </div>
+                    </template>
+                    <el-input v-model="result.scenePreset" type="textarea" autosize class="result-text-input" />
+                  </el-card>
+                </el-col>
+                <el-col :span="8">
+                  <el-card class="result-card">
+                    <template #header>
+                      <div class="card-header-content">
+                        <span>人物预设</span>
+                        <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('characterPreset')" />
+                      </div>
+                    </template>
+                    <el-input v-model="result.characterPreset" type="textarea" autosize class="result-text-input" />
+                  </el-card>
+                </el-col>
+              </el-row>
+            </div>
+            
+            <!-- 分镜脚本模式结果 -->
+            <div v-else>
+              <el-row :gutter="20" style="margin-bottom: 20px;">
+                <el-col :span="12">
+                  <el-card class="result-card">
+                    <template #header>
+                      <div class="card-header-content">
+                        <span>🎬 分镜脚本</span>
+                        <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('storyboard')" />
+                      </div>
+                    </template>
+                    <div v-if="result.storyboard" class="storyboard-container">
+                      <div v-for="(shot, index) in result.storyboard" :key="index" class="shot-item">
+                        <div class="shot-header">
+                          <span class="shot-number">镜头 {{ index + 1 }}</span>
+                          <span class="shot-type">{{ shot.type }}</span>
+                        </div>
+                        <div class="shot-description">{{ shot.description }}</div>
+                        <div class="shot-duration">时长: {{ shot.duration }}秒</div>
+                      </div>
                     </div>
-                  </template>
-                  <el-input v-model="result.synopsis" type="textarea" autosize class="result-text-input" />
-                </el-card>
-              </el-col>
-              <el-col :span="8">
-                <el-card class="result-card">
-                  <template #header>
-                    <div class="card-header-content">
-                      <span>场景预设</span>
-                      <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('scenePreset')" />
+                  </el-card>
+                </el-col>
+                <el-col :span="12">
+                  <el-card class="result-card">
+                    <template #header>
+                      <div class="card-header-content">
+                        <span>🎨 文生图提示词</span>
+                        <el-button type="primary" :icon="CopyDocument" circle plain size="small" @click="copyPrompts('imagePrompts')" />
+                      </div>
+                    </template>
+                    <div v-if="result.imagePrompts" class="prompts-container">
+                      <div v-for="(prompt, index) in result.imagePrompts" :key="index" class="prompt-item">
+                        <div class="prompt-title">场景 {{ index + 1 }}</div>
+                        <el-input v-model="prompt.text" type="textarea" autosize readonly class="prompt-text" />
+                        <el-button size="small" @click="copyPrompt(prompt.text)" style="margin-top: 5px;">
+                          复制提示词
+                        </el-button>
+                      </div>
                     </div>
-                  </template>
-                  <el-input v-model="result.scenePreset" type="textarea" autosize class="result-text-input" />
-                </el-card>
-              </el-col>
-              <el-col :span="8">
-                <el-card class="result-card">
-                  <template #header>
-                    <div class="card-header-content">
-                      <span>人物预设</span>
-                      <el-button type="primary" :icon="Refresh" circle plain size="small" @click="regeneratePart('characterPreset')" />
+                  </el-card>
+                </el-col>
+              </el-row>
+              
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-card class="result-card">
+                    <template #header>
+                      <div class="card-header-content">
+                        <span>🎥 图生视频提示词</span>
+                        <el-button type="primary" :icon="CopyDocument" circle plain size="small" @click="copyPrompts('videoPrompts')" />
+                      </div>
+                    </template>
+                    <div v-if="result.videoPrompts" class="prompts-container">
+                      <div v-for="(prompt, index) in result.videoPrompts" :key="index" class="prompt-item">
+                        <div class="prompt-title">镜头 {{ index + 1 }}</div>
+                        <div class="prompt-content">
+                          <div><strong>画面描述:</strong> {{ prompt.imageDescription }}</div>
+                          <div><strong>运动描述:</strong> {{ prompt.motionDescription }}</div>
+                          <div><strong>相机运动:</strong> {{ prompt.cameraMovement }}</div>
+                          <div><strong>时长:</strong> {{ prompt.duration }}秒</div>
+                          <div><strong>完整提示词:</strong></div>
+                          <el-input v-model="prompt.fullPrompt" type="textarea" autosize readonly class="prompt-text" />
+                          <el-button size="small" @click="copyPrompt(prompt.fullPrompt)" style="margin-top: 5px;">
+                            复制提示词
+                          </el-button>
+                        </div>
+                      </div>
                     </div>
-                  </template>
-                  <el-input v-model="result.characterPreset" type="textarea" autosize class="result-text-input" />
-                </el-card>
-              </el-col>
-            </el-row>
+                  </el-card>
+                </el-col>
+              </el-row>
+            </div>
 
             <el-card class="table-card">
               <template #header>
@@ -275,9 +399,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { MagicStick, FolderOpened, FolderAdd, Search, Refresh, Download, Picture, PictureRounded, VideoCamera } from '@element-plus/icons-vue'
+import { MagicStick, FolderOpened, FolderAdd, Search, Refresh, Download, Picture, PictureRounded, VideoCamera, CopyDocument } from '@element-plus/icons-vue'
 import SmartRecommendations from './SmartRecommendations.vue'
 import CacheManager from './CacheManager.vue'
 
@@ -286,6 +410,7 @@ const projectSearch = ref('')
 const loading = ref(false)
 const result = ref(null)
 const activeCollapse = ref(['1'])
+const storyboardCollapse = ref([''])
 const showTemplateDialog = ref(false)
 const templates = ref([])
 
@@ -296,7 +421,12 @@ const form = reactive({
   characterBio: '',
   storyOutline: '',
   specificScenes: '',
-  negativePrompt: ''
+  negativePrompt: '',
+  storyboardMode: false,
+  visualStyle: '',
+  cameraMovement: 'static',
+  lightingEffect: 'natural',
+  colorTone: 'cool'
 })
 
 const recommendedTags = ref([
@@ -329,33 +459,53 @@ const optimizeTitle = () => {
 
 const generateScript = async () => {
   if (!form.topic.trim()) {
-    ElMessage.warning('请输入故事主题')
+    ElMessage.warning('请输入故事主题！')
     return
   }
 
   loading.value = true
   
-  // 模拟AI生成过程
-  setTimeout(() => {
+  // 模拟AI处理时间
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  
+  if (form.storyboardMode) {
+    // 分镜脚本模式
+    const storyboard = generateStoryboard(form.topic, form.style, form.shots)
+    const imagePrompts = generateImagePrompts(storyboard, form.style, form.visualStyle, form.cameraMovement, form.lightingEffect, form.colorTone)
+    const videoPrompts = generateVideoPrompts(storyboard, form.style, form.cameraMovement, form.lightingEffect)
+    
     result.value = {
-      synopsis: `在一个${form.style === 'cyberpunk' ? '霓虹闪烁的未来都市' : '奇幻世界'}中，${form.topic}的故事展开。主角将经历一段充满挑战与发现的旅程，最终找到内心的答案。`,
-      scenePreset: `故事发生在${form.style === 'cyberpunk' ? '高楼林立的赛博朋克都市，霓虹灯映照下的雨夜街道' : '充满魔法与科技的奇幻王国'}，营造出${form.style === 'cyberpunk' ? '冷峻而充满希望' : '神秘而温馨'}的氛围。`,
-      characterPreset: `主角是一位${form.characterBio || '勇敢而富有同情心的探索者'}，在寻找${form.topic.split('寻找')[1] || '失落的记忆'}的过程中逐渐成长。`
+      storyboard,
+      imagePrompts,
+      videoPrompts,
+      synopsis: `这是一个关于${form.topic}的${form.style}风格故事，采用分镜脚本模式，共${form.shots}个镜头。`,
+      scenePreset: `整体风格：${getStyleDescription(form.style)}，画面风格：${form.visualStyle || '默认'}，镜头运动：${form.cameraMovement}，光影效果：${form.lightingEffect}，色彩调性：${form.colorTone}`,
+      characterPreset: `主题：${form.topic}，风格：${form.style}，镜头数：${form.shots}`,
+      tableData: storyboard.map((shot, index) => ({
+        shot: index + 1,
+        content: shot.description,
+        duration: shot.duration,
+        notes: `${shot.type}镜头，${form.style}风格`
+      }))
     }
-
-    // 生成分镜脚本
-    tableData.value = Array.from({ length: form.shots }, (_, i) => ({
-      shot: i + 1,
-      scene: `第${i + 1}个镜头：${form.topic.substring(0, 20)}...`,
-      duration: `${Math.floor(Math.random() * 5) + 3}秒`,
-      camera: ['推镜', '拉镜', '摇摄', '移摄', '跟拍'][Math.floor(Math.random() * 5)],
-      effect: ['淡入淡出', '闪白', '缩放', '旋转', '静止'][Math.floor(Math.random() * 5)],
-      imageUrl: ''
-    }))
-
-    loading.value = false
-    ElMessage.success('AI脚本生成完成！')
-  }, 2000)
+  } else {
+    // 标准模式
+    result.value = {
+      synopsis: `这是一个关于${form.topic}的${form.style}风格故事。主角在${form.style === 'cyberpunk' ? '霓虹闪烁的未来都市' : form.style === 'sci-fi' ? '浩瀚无垠的宇宙' : form.style === 'fantasy-guofeng' ? '仙气缭绕的古代世界' : '温馨治愈的日常生活'}中展开了一段惊心动魄的冒险。`,
+      scenePreset: `${form.style === 'cyberpunk' ? '赛博朋克都市：高楼林立，霓虹闪烁，全息广告在空中漂浮，飞行汽车穿梭于楼宇之间' : form.style === 'sci-fi' ? '太空场景：宇宙飞船在星空中航行，外星文明的建筑充满未来感，高科技设备随处可见' : form.style === 'fantasy-guofeng' ? '古风场景：亭台楼阁，山水如画，仙气缭绕，古代建筑与自然完美融合' : '日常场景：温馨的家庭环境，阳光透过窗户洒进来，生活气息浓厚'}。`,
+      characterPreset: `主角：${form.characterBio || '一个勇敢而智慧的年轻人'}，${form.style === 'cyberpunk' ? '在未来科技社会中寻找自我' : form.style === 'sci-fi' ? '在星际探索中发现宇宙奥秘' : form.style === 'fantasy-guofeng' ? '在修仙世界中追求大道' : '在日常生活中发现美好'}。`,
+      tableData: Array.from({ length: form.shots }, (_, i) => ({
+        shot: i + 1,
+        content: `第${i + 1}个镜头：${form.topic}的${form.style}风格场景`,
+        duration: Math.floor(Math.random() * 5) + 1,
+        notes: `${form.style}风格，${form.characterBio ? '体现主角性格' : '突出主题'}`
+      }))
+    }
+  }
+  
+  tableData.value = result.value.tableData
+  loading.value = false
+  ElMessage.success('AI脚本生成完成！')
 }
 
 const regeneratePart = (part) => {
@@ -512,6 +662,165 @@ const selectProjectFolder = async () => {
     projectPath.value = path
     ElMessage.success(`项目文件夹已设置为：${path}`)
   }
+}
+
+// 复制提示词功能
+const copyPrompt = (text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    ElMessage.success('提示词已复制到剪贴板')
+  }).catch(() => {
+    ElMessage.error('复制失败，请手动复制')
+  })
+}
+
+const copyPrompts = (type) => {
+  if (!result.value || !result.value[type]) return
+  
+  const prompts = result.value[type].map(p => p.text || p.fullPrompt).join('\n\n')
+  copyPrompt(prompts)
+}
+
+// 生成分镜脚本
+const generateStoryboard = (topic, style, shots) => {
+  const storyboard = []
+  const shotTypes = ['远景', '中景', '近景', '特写', '全景', '俯拍', '仰拍']
+  const sceneDescriptions = {
+    'cyberpunk': [
+      '霓虹灯闪烁的未来都市夜景',
+      '高楼大厦间的全息投影广告',
+      '阴暗小巷中的霓虹灯光',
+      '科技感十足的建筑外观',
+      '充满未来感的交通工具',
+      '赛博朋克风格的室内场景',
+      '高科技设备与古老建筑的对比',
+      '霓虹灯下的雨夜街道'
+    ],
+    'sci-fi': [
+      '宇宙飞船的驾驶舱',
+      '外星球的奇特地貌',
+      '高科技实验室',
+      '太空站的全景',
+      '未来城市的天际线',
+      '机器人的特写镜头',
+      '星际旅行的场景',
+      '时间隧道的视觉效果'
+    ],
+    'fantasy-guofeng': [
+      '古代宫殿的宏伟建筑',
+      '山水间的诗意画面',
+      '仙侠世界的奇幻场景',
+      '古代街道的热闹景象',
+      '传统建筑的精美细节',
+      '自然风光的壮丽景色',
+      '古代服饰的华美展示',
+      '神话传说的场景再现'
+    ],
+    'slice-of-life': [
+      '温馨的家居环境',
+      '日常生活的真实瞬间',
+      '人物的自然表情',
+      '温暖的光影效果',
+      '生活细节的特写',
+      '人物互动的温馨场景',
+      '日常用品的精美展示',
+      '生活场景的真实记录'
+    ]
+  }
+
+  for (let i = 0; i < shots; i++) {
+    const sceneArray = sceneDescriptions[style] || sceneDescriptions['cyberpunk']
+    const sceneDesc = sceneArray[i % sceneArray.length]
+    const shotType = shotTypes[i % shotTypes.length]
+    
+    storyboard.push({
+      type: shotType,
+      description: `${sceneDesc}，${getStyleDescription(style)}`,
+      duration: Math.floor(Math.random() * 5) + 2
+    })
+  }
+  
+  return storyboard
+}
+
+// 生成文生图提示词
+const generateImagePrompts = (storyboard, style, visualStyle, cameraMovement, lightingEffect, colorTone) => {
+  const baseStyles = {
+    'cyberpunk': 'cyberpunk style, neon lights, futuristic city, high tech, dark atmosphere, neon glow, sci-fi',
+    'sci-fi': 'science fiction style, futuristic technology, space theme, advanced civilization, high tech',
+    'fantasy-guofeng': 'Chinese fantasy style, ancient architecture, traditional elements, oriental aesthetics, mythological',
+    'slice-of-life': 'daily life style, warm atmosphere, natural lighting, realistic, documentary style'
+  }
+  
+  const lightingStyles = {
+    'natural': 'natural lighting, soft light',
+    'dramatic': 'dramatic lighting, strong contrast, cinematic',
+    'neon': 'neon lights, colorful glow, cyberpunk lighting',
+    'backlight': 'backlighting, silhouette effect, rim light',
+    'soft': 'soft lighting, diffused light, gentle shadows',
+    'hard': 'hard lighting, strong shadows, high contrast'
+  }
+  
+  const colorStyles = {
+    'cool': 'cool color palette, blue tones, cyan, teal',
+    'warm': 'warm color palette, orange tones, golden hour, cozy',
+    'high_contrast': 'high contrast, vivid colors, saturated',
+    'desaturated': 'desaturated colors, muted tones, vintage',
+    'cyberpunk': 'cyberpunk colors, neon pink and cyan, electric blue',
+    'vintage': 'vintage colors, film look, nostalgic, retro'
+  }
+
+  return storyboard.map((shot, index) => ({
+    text: `${shot.description}, ${baseStyles[style] || baseStyles['cyberpunk']}, ${lightingStyles[lightingEffect] || lightingStyles['natural']}, ${colorStyles[colorTone] || colorStyles['cool']}, ${visualStyle || ''}, ${cameraMovement} camera movement, ${shot.type} shot, 4K resolution, high quality, detailed, cinematic`
+  }))
+}
+
+// 生成图生视频提示词
+const generateVideoPrompts = (storyboard, style, cameraMovement, lightingEffect) => {
+  const movementDescriptions = {
+    'static': 'static camera, fixed position',
+    'push_pull': 'smooth push in/pull out camera movement',
+    'pan': 'smooth panning camera movement',
+    'tracking': 'tracking shot, following the subject',
+    'rotation': 'rotating camera movement, 360 degree view',
+    'crane': 'crane shot, smooth vertical movement'
+  }
+
+  return storyboard.map((shot, index) => {
+    const motionDesc = getMotionDescription(shot.type)
+    const cameraDesc = movementDescriptions[cameraMovement] || movementDescriptions['static']
+    
+    return {
+      imageDescription: shot.description,
+      motionDescription: motionDesc,
+      cameraMovement: cameraDesc,
+      duration: shot.duration,
+      fullPrompt: `${shot.description}, ${motionDesc}, ${cameraDesc}, ${lightingEffect} lighting, ${style} style, smooth motion, high quality video, cinematic, 4K`
+    }
+  })
+}
+
+// 辅助函数
+const getStyleDescription = (style) => {
+  const descriptions = {
+    'cyberpunk': '充满科技感的赛博朋克风格',
+    'sci-fi': '科幻未来的太空风格',
+    'fantasy-guofeng': '中国传统仙侠风格',
+    'slice-of-life': '温馨治愈的日常生活风格'
+  }
+  return descriptions[style] || descriptions['cyberpunk']
+}
+
+const getMotionDescription = (shotType) => {
+  const motions = {
+    '远景': '展现宏大场景的全景运动',
+    '中景': '突出主体的平稳运动',
+    '近景': '细腻的人物表情变化',
+    '特写': '强调细节特写的缓慢运动',
+    '全景': '展示完整场景的全方位运动',
+    '俯拍': '从上往下的俯瞰视角运动',
+    '仰拍': '从下往上的仰视视角运动'
+  }
+  return motions[shotType] || '自然的镜头运动'
 }
 
 onMounted(() => {

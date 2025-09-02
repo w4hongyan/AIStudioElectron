@@ -26,9 +26,17 @@
               <el-icon><Cpu /></el-icon>
               <span>内容创作</span>
             </template>
+            <el-menu-item index="quick-creation">
+                <el-icon><Lightning /></el-icon>
+                <template #title>一键创作</template>
+              </el-menu-item>
             <el-menu-item index="ai-writer">
                 <el-icon><Edit /></el-icon>
                 <template #title>AI 写作</template>
+              </el-menu-item>
+            <el-menu-item index="ai-script-writer">
+                <el-icon><EditPen /></el-icon>
+                <template #title>AI 脚本编写器</template>
               </el-menu-item>
             <el-menu-item index="ai-image-generator">
                 <el-icon><Picture /></el-icon>
@@ -184,7 +192,8 @@ import {
   Star,
   Monitor,
   Operation,
-  DataAnalysis
+  DataAnalysis,
+  Lightning
 } from '@element-plus/icons-vue';
 import AiImageGenerator from './components/AiImageGenerator.vue'
 import AnalyticsDashboard from './components/AnalyticsDashboard.vue'
