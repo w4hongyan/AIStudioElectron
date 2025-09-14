@@ -285,6 +285,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { Refresh, CaretTop, CaretBottom, View, Star, ChatDotRound, Share, Edit, Minus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { aiService } from '../services/aiService.js'
 import SmartRecommendations from './SmartRecommendations.vue'
 
 // 数据状态
@@ -364,9 +366,157 @@ const formatDate = (date) => {
 const fetchHotContent = async () => {
   isLoading.value = true
   
-  // 模拟获取热点内容
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  try {
+    // 构建查询关键词
+    const keywords = buildSearchKeywords()
+    
+    // 调用AI服务进行热点预测
+    const result = await aiService.predictHotTopics(keywords, 7)
+    
+    if (result.success) {
+      // 处理AI返回的数据
+      hotContent.value = processAIHotData(result.data)
+      
+      // 生成热门关键词
+      hotKeywords.value = extractKeywords(result.data)
+      
+      ElMessage.success(`热点数据更新完成！数据来源: ${result.source}`)
+    } else {
+      // 使用降级数据
+      hotContent.value = getMockHotData()
+      hotKeywords.value = getMockKeywords()
+      ElMessage.warning('AI服务暂不可用，显示模拟数据')
+    }
+  } catch (error) {
+    console.error('获取热点数据失败:', error)
+    ElMessage.error('获取热点数据失败: ' + error.message)
+    
+    // 使用降级数据
+    hotContent.value = getMockHotData()
+    hotKeywords.value = getMockKeywords()
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 构建搜索关键词
+const buildSearchKeywords = () => {
+  const platformNames = selectedPlatforms.value.map(id => {
+    const platform = platforms.value.find(p => p.id === id)
+    return platform ? platform.name : ''
+  }).filter(Boolean).join(' ')
   
+  const categoryName = category.value.length > 0 ? category.value[category.value.length - 1] : '全部'
+  
+  return `${platformNames} ${categoryName} ${contentType.value} 热点 趋势`
+}
+
+// 处理AI返回的热点数据
+const processAIHotData = (aiData) => {
+  return aiData.map((item, index) => ({
+    id: index + 1,
+    title: item.aiInsights ? extractTitle(item.aiInsights) : `热点话题 ${index + 1}`,
+    platform: getRandomPlatform(),
+    platformColor: getPlatformColor(getRandomPlatform()),
+    category: category.value.length > 0 ? getCategoryLabel(category.value[category.value.length - 1]) : '综合',
+    views: Math.floor(item.volume || Math.random() * 3000000 + 500000),
+    likes: Math.floor((item.volume || Math.random() * 3000000) * 0.06),
+    comments: Math.floor((item.volume || Math.random() * 3000000) * 0.003),
+    shares: Math.floor((item.volume || Math.random() * 3000000) * 0.004),
+    time: getRelativeTime(item.date),
+    trend: item.trend || (item.score > 80 ? 'up' : item.score > 60 ? 'stable' : 'down'),
+    rank: index + 1,
+    isTrending: item.score > 85,
+    collected: false,
+    description: item.aiInsights || `基于AI分析的热点内容，热度评分: ${item.score}`,
+    tags: item.keywords || ['AI分析', '热点', '趋势'],
+    publishTime: formatDate(item.date),
+    confidence: item.confidence || 85
+  }))
+}
+
+// 从AI分析中提取标题
+const extractTitle = (insights) => {
+  if (typeof insights === 'string') {
+    // 尝试从文本中提取第一行作为标题
+    const lines = insights.split('\n').filter(line => line.trim())
+    return lines[0] || '热点话题'
+  }
+  return '热点话题'
+}
+
+// 获取随机平台
+const getRandomPlatform = () => {
+  const availablePlatforms = platforms.value.filter(p => selectedPlatforms.value.includes(p.id))
+  const randomPlatform = availablePlatforms[Math.floor(Math.random() * availablePlatforms.length)]
+  return randomPlatform ? randomPlatform.name : '抖音'
+}
+
+// 获取平台颜色
+const getPlatformColor = (platformName) => {
+  const colorMap = {
+    '抖音': '#000',
+    '哔哩哔哩': '#00A1D6',
+    '小红书': '#FF2442',
+    '微博': '#E6162D',
+    '快手': '#FF6A00'
+  }
+  return colorMap[platformName] || '#409eff'
+}
+
+// 获取分类标签
+const getCategoryLabel = (categoryValue) => {
+  const categoryMap = {
+    'celebrity': '明星',
+    'variety': '综艺',
+    'music': '音乐',
+    'digital': '数码',
+    'ai': '人工智能',
+    'internet': '互联网',
+    'food': '美食',
+    'travel': '旅行',
+    'fashion': '时尚'
+  }
+  return categoryMap[categoryValue] || '综合'
+}
+
+// 获取相对时间
+const getRelativeTime = (date) => {
+  const now = new Date()
+  const targetDate = new Date(date)
+  const diffHours = Math.floor((now - targetDate) / (1000 * 60 * 60))
+  
+  if (diffHours < 1) return '刚刚'
+  if (diffHours < 24) return `${diffHours}小时前`
+  return `${Math.floor(diffHours / 24)}天前`
+}
+
+// 提取关键词
+const extractKeywords = (aiData) => {
+  const keywords = new Map()
+  
+  aiData.forEach(item => {
+    if (item.keywords && Array.isArray(item.keywords)) {
+      item.keywords.forEach(keyword => {
+        const count = keywords.get(keyword) || 0
+        keywords.set(keyword, count + 1)
+      })
+    }
+  })
+  
+  const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399']
+  return Array.from(keywords.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([text, count], index) => ({
+      text,
+      weight: Math.max(12, 24 - index * 2),
+      color: colors[index % colors.length]
+    }))
+}
+
+// 获取模拟热点数据（降级方案）
+const getMockHotData = () => {
   const mockData = [
     {
       id: 1,
@@ -427,10 +577,12 @@ const fetchHotContent = async () => {
     }
   ]
   
-  hotContent.value = mockData
-  
-  // 生成热门关键词
-  hotKeywords.value = [
+  return mockData
+}
+
+// 获取模拟关键词（降级方案）
+const getMockKeywords = () => {
+  return [
     { text: 'AI', weight: 24, color: '#409eff' },
     { text: '春节档', weight: 20, color: '#67c23a' },
     { text: '00后', weight: 18, color: '#e6a23c' },
@@ -438,8 +590,6 @@ const fetchHotContent = async () => {
     { text: '绘画', weight: 14, color: '#f56c6c' },
     { text: '电影', weight: 12, color: '#409eff' }
   ]
-  
-  isLoading.value = false
 }
 
 const loadMore = async () => {

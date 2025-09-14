@@ -4,6 +4,7 @@
  */
 
 import { ElMessage } from 'element-plus'
+import { glmApiService } from './glmApiService.js'
 
 class AIService {
   constructor() {
@@ -47,18 +48,34 @@ class AIService {
   }
 
   /**
-   * 热点预测算法 - 基于历史数据和趋势分析
+   * 热点预测算法 - 基于GLM AI分析和历史数据
    */
   async predictHotTopics(keywords, days = 7) {
     try {
-      const predictionData = await this.generatePrediction(keywords, days)
-      return {
-        success: true,
-        data: predictionData,
-        confidence: this.calculateConfidence(predictionData),
-        timestamp: new Date().toISOString()
+      // 优先使用GLM AI进行热点分析
+      if (glmApiService.isConfigured()) {
+        const aiAnalysis = await glmApiService.analyzeHotTopics(keywords)
+        const predictionData = await this.enhancePredictionWithAI(aiAnalysis, keywords, days)
+        return {
+          success: true,
+          data: predictionData,
+          confidence: this.calculateConfidence(predictionData),
+          timestamp: new Date().toISOString(),
+          source: 'ai_enhanced'
+        }
+      } else {
+        // 降级到本地算法
+        const predictionData = await this.generatePrediction(keywords, days)
+        return {
+          success: true,
+          data: predictionData,
+          confidence: this.calculateConfidence(predictionData),
+          timestamp: new Date().toISOString(),
+          source: 'local_algorithm'
+        }
       }
     } catch (error) {
+      console.warn('热点预测失败，使用降级方案:', error.message)
       return {
         success: false,
         error: error.message,
@@ -135,6 +152,25 @@ class AIService {
     }
     
     request.reject(lastError)
+  }
+
+  /**
+   * 使用AI增强预测数据
+   */
+  async enhancePredictionWithAI(aiAnalysis, keywords, days) {
+    const baseTrends = await this.generatePrediction(keywords, days)
+    
+    // 如果AI返回了结构化数据，使用AI的分析结果
+    if (aiAnalysis.score && aiAnalysis.trend) {
+      return baseTrends.map((trend, index) => ({
+        ...trend,
+        score: Math.min(100, aiAnalysis.score + (Math.random() - 0.5) * 10),
+        aiInsights: aiAnalysis.analysis || aiAnalysis.recommendations,
+        confidence: aiAnalysis.confidence || 85
+      }))
+    }
+    
+    return baseTrends
   }
 
   /**
@@ -258,6 +294,142 @@ class AIService {
         isFallback: true
       }
     ]
+  }
+
+  /**
+   * AI内容生成 - 使用GLM-4-Flash
+   */
+  async generateContent(prompt, type = 'article', options = {}) {
+    try {
+      if (glmApiService.isConfigured()) {
+        const result = await glmApiService.generateContent(prompt, type, options)
+        return {
+          success: true,
+          content: result.content,
+          usage: result.usage,
+          model: result.model,
+          timestamp: result.timestamp
+        }
+      } else {
+        // 降级到模拟内容
+        return {
+          success: true,
+          content: this.generateMockContent(prompt, type),
+          model: 'mock',
+          timestamp: new Date().toISOString()
+        }
+      }
+    } catch (error) {
+      console.warn('AI内容生成失败:', error.message)
+      return {
+        success: false,
+        error: error.message,
+        fallback: this.generateMockContent(prompt, type)
+      }
+    }
+  }
+
+  /**
+   * 智能推荐 - 基于用户画像
+   */
+  async getSmartRecommendations(userProfile, contentType = 'mixed') {
+    try {
+      if (glmApiService.isConfigured()) {
+        const recommendations = await glmApiService.getRecommendations(userProfile, contentType)
+        return {
+          success: true,
+          data: recommendations,
+          timestamp: new Date().toISOString(),
+          source: 'ai_powered'
+        }
+      } else {
+        return {
+          success: true,
+          data: this.getMockRecommendations(userProfile, contentType),
+          timestamp: new Date().toISOString(),
+          source: 'rule_based'
+        }
+      }
+    } catch (error) {
+      console.warn('智能推荐失败:', error.message)
+      return {
+        success: false,
+        error: error.message,
+        fallback: this.getMockRecommendations(userProfile, contentType)
+      }
+    }
+  }
+
+  /**
+   * 内容优化建议
+   */
+  async optimizeContent(content, platform, goal = 'engagement') {
+    try {
+      if (glmApiService.isConfigured()) {
+        const optimization = await glmApiService.optimizeContent(content, platform, goal)
+        return {
+          success: true,
+          data: optimization,
+          timestamp: new Date().toISOString()
+        }
+      } else {
+        return {
+          success: true,
+          data: this.getMockOptimization(content, platform, goal),
+          timestamp: new Date().toISOString()
+        }
+      }
+    } catch (error) {
+      console.warn('内容优化失败:', error.message)
+      return {
+        success: false,
+        error: error.message,
+        fallback: this.getMockOptimization(content, platform, goal)
+      }
+    }
+  }
+
+  /**
+   * 生成模拟内容（降级方案）
+   */
+  generateMockContent(prompt, type) {
+    const templates = {
+      article: `基于"${prompt}"的深度分析\n\n这是一个关于${prompt}的详细分析文章。内容包括背景介绍、核心观点、实例分析和总结建议。\n\n请注意：这是模拟内容，建议配置GLM API获得更好的效果。`,
+      social: `🔥 ${prompt} 热点解析\n\n✨ 核心要点\n📈 趋势分析\n💡 实用建议\n\n#${prompt.replace(/\s+/g, '')} #热点分析`,
+      marketing: `${prompt} - 不容错过的机会！\n\n🎯 核心优势\n💰 超值体验\n⏰ 限时优惠\n\n立即行动，把握先机！`,
+      tutorial: `${prompt} 完整教程\n\n📋 准备工作\n🔧 操作步骤\n✅ 验证结果\n💡 进阶技巧\n\n跟着步骤，轻松掌握！`
+    }
+    
+    return templates[type] || templates.article
+  }
+
+  /**
+   * 生成模拟推荐（降级方案）
+   */
+  getMockRecommendations(userProfile, contentType) {
+    return {
+      topics: ['AI技术趋势', '内容创作技巧', '社交媒体运营', '数据分析方法', '用户体验设计'],
+      styles: ['专业分析', '轻松幽默', '实用教程', '深度解读', '热点追踪'],
+      timing: ['09:00-11:00', '14:00-16:00', '19:00-21:00'],
+      platforms: ['小红书', '抖音', 'B站', '微博'],
+      confidence: 75
+    }
+  }
+
+  /**
+   * 生成模拟优化建议（降级方案）
+   */
+  getMockOptimization(content, platform, goal) {
+    return {
+      optimized_content: content + '\n\n[AI优化建议：添加更多互动元素和热门标签]',
+      suggestions: [
+        '增加emoji表情提升视觉效果',
+        '添加相关热门标签',
+        '优化开头吸引注意力',
+        '增加互动性问题'
+      ],
+      expected_improvement: '预计互动率提升15-25%'
+    }
   }
 
   /**

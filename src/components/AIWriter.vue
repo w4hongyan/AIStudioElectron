@@ -80,6 +80,7 @@
 <script setup>
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { aiService } from '../services/aiService.js'
 
 const form = ref({
   type: 'blog',
@@ -99,9 +100,92 @@ const generateContent = async () => {
   
   loading.value = true
   
-  // 模拟AI生成过程
-  setTimeout(() => {
-    generatedContent.value = `【${form.value.type}】关于"${form.value.keywords}"的${form.value.tone}风格内容：
+  try {
+    // 构建AI提示词
+    const prompt = buildPrompt()
+    
+    // 调用AI服务生成内容
+    const result = await aiService.generateContent(prompt, getContentType(), {
+      maxTokens: Math.ceil(form.value.wordCount * 1.5), // 根据字数调整token数
+      temperature: getToneTemperature()
+    })
+    
+    if (result.success) {
+      generatedContent.value = result.content
+      ElMessage.success(`内容生成完成！使用模型: ${result.model}`)
+      
+      // 显示使用统计（如果有）
+      if (result.usage) {
+        console.log('API使用统计:', result.usage)
+      }
+    } else {
+      // 使用降级内容
+      generatedContent.value = result.fallback || result.error
+      ElMessage.warning('AI服务暂不可用，已生成模拟内容')
+    }
+  } catch (error) {
+    console.error('内容生成失败:', error)
+    ElMessage.error('内容生成失败: ' + error.message)
+    
+    // 生成降级内容
+    generatedContent.value = generateFallbackContent()
+  } finally {
+    loading.value = false
+  }
+}
+
+// 构建AI提示词
+const buildPrompt = () => {
+  const typeMap = {
+    news: '新闻报道',
+    product: '产品介绍',
+    blog: '博客文章',
+    social: '社交媒体内容'
+  }
+  
+  const toneMap = {
+    '正式': '正式严谨',
+    '轻松': '轻松自然',
+    '幽默': '幽默风趣',
+    '专业': '专业权威'
+  }
+  
+  return `请为我创作一篇${typeMap[form.value.type]}，主题围绕"${form.value.keywords}"。
+
+要求：
+- 字数约${form.value.wordCount}字
+- 语气风格：${toneMap[form.value.tone]}
+- 内容要有逻辑性和可读性
+- 适合${typeMap[form.value.type]}的场景使用
+
+请直接输出文章内容，不需要额外说明。`
+}
+
+// 获取内容类型映射
+const getContentType = () => {
+  const typeMap = {
+    news: 'article',
+    product: 'marketing',
+    blog: 'article',
+    social: 'social'
+  }
+  return typeMap[form.value.type] || 'article'
+}
+
+// 根据语气获取温度参数
+const getToneTemperature = () => {
+  const temperatureMap = {
+    '正式': 0.3,
+    '轻松': 0.7,
+    '幽默': 0.9,
+    '专业': 0.4
+  }
+  return temperatureMap[form.value.tone] || 0.7
+}
+
+// 生成降级内容
+const generateFallbackContent = () => {
+  return `【${form.value.type}】关于"${form.value.keywords}"的${form.value.tone}风格内容：
 
 在这个${form.value.tone}的内容中，我们将深入探讨"${form.value.keywords}"相关的话题。通过AI技术的智能分析，我们为您生成了一篇约${form.value.wordCount}字的高质量文章。
 
@@ -110,14 +194,11 @@ const generateContent = async () => {
 AI写作助手基于最新的自然语言处理技术，能够理解上下文语境，生成符合要求的专业内容。您可以根据需要进一步调整和完善。
 
 ---
+⚠️ 注意：当前使用模拟内容，请配置GLM API密钥获得更好效果
 生成时间: ${new Date().toLocaleString()}
 字数统计: ${form.value.wordCount}字
 写作类型: ${form.value.type}
 语气风格: ${form.value.tone}`
-    
-    loading.value = false
-    ElMessage.success('内容生成完成！')
-  }, 2000)
 }
 
 const clearForm = () => {

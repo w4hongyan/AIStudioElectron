@@ -160,6 +160,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Refresh, CaretTop, CaretBottom, TrendCharts, Timer, CollectionTag, MagicStick } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import aiService from '../services/aiService'
 
 const hotTopics = ref([
   { id: 1, title: 'AI绘画工具对比', trend: 'up', engagement: 95 },
@@ -227,8 +229,80 @@ const getSuggestionIcon = (type) => {
   return iconMap[type] || MagicStick
 }
 
-const refreshRecommendations = () => {
-  // 模拟刷新推荐数据
+const refreshRecommendations = async () => {
+  try {
+    // 构建用户画像
+    const userProfile = {
+      interests: ['AI技术', '内容创作', '社交媒体'],
+      platforms: ['小红书', '抖音', 'B站'],
+      contentTypes: ['教程', '分析', '推荐'],
+      engagement_history: {
+        avg_views: 12500,
+        avg_likes: 850,
+        best_time: '19:00-21:00'
+      }
+    }
+
+    // 调用AI推荐服务
+    const result = await aiService.getSmartRecommendations(userProfile, 'mixed')
+    
+    if (result.success && result.data) {
+      // 更新热点话题
+      if (result.data.topics) {
+        hotTopics.value = result.data.topics.map((topic, index) => ({
+          id: index + 1,
+          title: topic,
+          trend: Math.random() > 0.3 ? 'up' : Math.random() > 0.5 ? 'stable' : 'down',
+          engagement: Math.floor(Math.random() * 30) + 70
+        }))
+      }
+      
+      // 更新推荐标签
+      if (result.data.styles) {
+        const tagTypes = ['success', 'primary', 'warning', 'info']
+        recommendedTags.value.hot = result.data.styles.slice(0, 4).map((style, index) => ({
+          name: `#${style}`,
+          type: tagTypes[index % tagTypes.length],
+          score: Math.floor(Math.random() * 25) + 75
+        }))
+      }
+      
+      // 更新最佳发布时间
+      if (result.data.timing) {
+        bestTimes.value = result.data.timing.map(time => ({
+          time,
+          score: Math.floor(Math.random() * 30) + 70,
+          reason: getTimeReason(time)
+        }))
+      }
+      
+      ElMessage.success(`推荐已更新 (${result.source === 'ai_powered' ? 'AI智能' : '规则'})`)
+    } else {
+      // 降级到模拟数据
+      loadMockRecommendations()
+      ElMessage.warning('使用模拟推荐数据')
+    }
+  } catch (error) {
+    console.error('获取推荐失败:', error)
+    loadMockRecommendations()
+    ElMessage.error('推荐更新失败，使用默认数据')
+  }
+}
+
+// 获取时间段说明
+const getTimeReason = (timeSlot) => {
+  const reasons = {
+    '09:00-11:00': '上班时间，轻度浏览',
+    '12:00-13:00': '午休时间，碎片化浏览',
+    '14:00-16:00': '下午时段，工作间隙',
+    '19:00-21:00': '晚间黄金时段，深度阅读',
+    '21:00-22:00': '睡前时光，放松浏览'
+  }
+  return reasons[timeSlot] || '用户活跃时段'
+}
+
+// 加载模拟推荐数据（降级方案）
+const loadMockRecommendations = () => {
   const topics = [
     { id: 1, title: 'AI绘画工具对比', trend: 'up', engagement: 95 },
     { id: 2, title: '春节档电影推荐', trend: 'up', engagement: 88 },
@@ -239,8 +313,6 @@ const refreshRecommendations = () => {
   ]
   
   hotTopics.value = topics.sort(() => Math.random() - 0.5).slice(0, 4)
-  
-  ElMessage.success('推荐已更新')
 }
 
 const selectTopic = (topic) => {
@@ -290,6 +362,8 @@ const startRealTimeUpdates = () => {
 }
 
 onMounted(() => {
+  // 初始化加载推荐数据
+  refreshRecommendations()
   startRealTimeUpdates()
 })
 

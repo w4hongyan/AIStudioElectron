@@ -21,7 +21,19 @@
           />
           
           <div class="prompt-section">
-            <label>正向提示词</label>
+            <div class="prompt-header">
+              <label>正向提示词</label>
+              <el-button 
+                size="small" 
+                type="primary" 
+                :loading="isOptimizing"
+                @click="optimizePrompt"
+                :disabled="!positivePrompt.trim()"
+              >
+                <el-icon><MagicStick /></el-icon>
+                AI优化
+              </el-button>
+            </div>
             <el-input
               v-model="positivePrompt"
               type="textarea"
@@ -170,8 +182,10 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Picture, ZoomIn, Download, Refresh } from '@element-plus/icons-vue'
+import { Picture, ZoomIn, Download, Refresh, MagicStick } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { stylePresets, defaultImageSize, imageSizeOptions } from '../config/imageGenerator.config.js'
+import aiService from '../services/aiService'
 
 const positivePrompt = ref('')
 const negativePrompt = ref('')
@@ -180,6 +194,7 @@ const imageSize = ref(defaultImageSize)
 const batchCount = ref(1)
 
 const isGenerating = ref(false)
+const isOptimizing = ref(false)
 const generationProgress = ref(0)
 const generationStatus = ref('')
 const generationText = ref('')
@@ -194,6 +209,79 @@ const previewDialog = reactive({
 })
 
 const formatDate = (date) => new Date(date).toLocaleString()
+
+// AI提示词优化
+const optimizePrompt = async () => {
+  if (!positivePrompt.value.trim()) return
+  
+  isOptimizing.value = true
+  try {
+    const styleInfo = stylePresets.find(s => s.id === selectedStyle.value)
+    const optimizationPrompt = `请优化以下图片生成提示词，使其更加专业和详细。
+
+原始提示词：${positivePrompt.value}
+风格：${styleInfo?.name || '默认'}
+图片尺寸：${imageSize.value}
+
+请返回优化后的英文提示词，包含：
+1. 主体描述
+2. 风格细节
+3. 光影效果
+4. 构图建议
+5. 质量关键词
+
+只返回优化后的提示词，不要其他解释。`
+
+    const result = await aiService.generateContent(optimizationPrompt, 'prompt_optimization', {
+      temperature: 0.7,
+      max_tokens: 500
+    })
+    
+    if (result.success && result.content) {
+      // 提取优化后的提示词
+      let optimizedPrompt = result.content.trim()
+      
+      // 如果返回的是中文，尝试提取英文部分
+      const englishMatch = optimizedPrompt.match(/[a-zA-Z][^\u4e00-\u9fa5]*$/)
+      if (englishMatch) {
+        optimizedPrompt = englishMatch[0].trim()
+      }
+      
+      positivePrompt.value = optimizedPrompt
+      ElMessage.success('提示词已优化')
+    } else {
+      // 降级到本地优化
+      const localOptimized = optimizePromptLocally(positivePrompt.value, selectedStyle.value)
+      positivePrompt.value = localOptimized
+      ElMessage.success('已使用本地优化')
+    }
+  } catch (error) {
+    console.error('提示词优化失败:', error)
+    // 降级到本地优化
+    const localOptimized = optimizePromptLocally(positivePrompt.value, selectedStyle.value)
+    positivePrompt.value = localOptimized
+    ElMessage.warning('AI优化失败，使用本地优化')
+  } finally {
+    isOptimizing.value = false
+  }
+}
+
+// 本地提示词优化（降级方案）
+const optimizePromptLocally = (prompt, style) => {
+  const styleKeywords = {
+    'realistic': 'photorealistic, high quality, detailed, professional photography',
+    'anime': 'anime style, manga, cel shading, vibrant colors, detailed',
+    'oil-painting': 'oil painting style, classical art, brush strokes, artistic',
+    'watercolor': 'watercolor painting, soft colors, artistic, traditional media',
+    'sketch': 'pencil sketch, line art, monochrome, artistic drawing',
+    'cyberpunk': 'cyberpunk style, neon lights, futuristic, high tech, dark atmosphere'
+  }
+  
+  const qualityKeywords = 'masterpiece, best quality, ultra detailed, 8k resolution'
+  const styleKeyword = styleKeywords[style] || styleKeywords['realistic']
+  
+  return `${prompt}, ${styleKeyword}, ${qualityKeywords}`
+}
 
 const generateImage = async () => {
   if (!positivePrompt.value.trim()) return
@@ -287,11 +375,20 @@ onMounted(() => {
 .prompt-section {
   margin-bottom: 20px;
 }
+.prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
 .prompt-section label, .style-presets label, .parameters h4, .param-row label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
   color: #303133;
+}
+.prompt-header label {
+  margin-bottom: 0;
 }
 .style-presets, .parameters {
   margin-bottom: 20px;

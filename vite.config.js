@@ -5,4 +5,7 @@ import vue from '@vitejs/plugin-vue';
 export default defineConfig({
   base: './', // Set the base path for Electron
   plugins: [vue()],
+  server: {
+    port: 5173
+  }
 });

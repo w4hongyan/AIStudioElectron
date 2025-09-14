@@ -24,7 +24,7 @@
     <!-- 🎯 新手一键创作流程 -->
     <div class="quick-actions">
       <!-- 核心场景：我今天要发什么？ -->
-      <div class="action-card primary" @click="startQuickCreation">
+      <div class="action-card primary featured" @click="startQuickCreation">
         <div class="action-icon">
           <el-icon :size="32"><Lightning /></el-icon>
         </div>
@@ -33,6 +33,7 @@
           <p>3分钟完成今日内容创作</p>
           <el-tag type="success" size="small">新手推荐</el-tag>
         </div>
+        <div class="action-badge">HOT</div>
       </div>
       
       <!-- 核心场景：什么内容最火？ -->
@@ -45,6 +46,7 @@
           <p>AI推荐10个爆款选题</p>
           <el-tag type="warning" size="small">实时更新</el-tag>
         </div>
+        <div class="action-badge">NEW</div>
       </div>
       
       <!-- 核心场景：如何批量生产？ -->
@@ -60,36 +62,7 @@
       </div>
     </div>
     
-    <!-- 📊 个性化数据洞察 -->
-    <div class="personal-insights">
-      <div class="insight-card">
-        <h4>📈 你的创作效率</h4>
-        <div class="efficiency-meter">
-          <el-progress 
-            type="circle" 
-            :percentage="85" 
-            :width="80"
-            status="success">
-            <template #default>85%</template>
-          </el-progress>
-          <div class="efficiency-text">
-            <span>比同行快3.2倍</span>
-            <small>本周已节省4.5小时</small>
-          </div>
-        </div>
-      </div>
-      
-      <div class="insight-card">
-        <h4>🎯 最佳发布时间</h4>
-        <div class="optimal-time">
-          <el-icon :size="24"><Clock /></el-icon>
-          <div>
-            <strong>今晚 19:30-20:30</strong>
-            <small>预计曝光量提升240%</small>
-          </div>
-        </div>
-      </div>
-    </div>
+
 
     <div class="feature-grid">
       <div v-for="group in featureGroups" :key="group.category" class="feature-group">
@@ -405,13 +378,27 @@ const openSmartWorkflow = () => {
   router.push('/batch-processor')
 }
 
-const openFeature = (feature) => {
+const loading = ref(false)
+
+const openFeature = async (feature) => {
   console.log('打开功能:', feature.name)
+  loading.value = true
   
-  if (feature.route) {
-    router.push(feature.route)
-  } else {
-    ElMessage.info(`${feature.name} 功能开发中...`)
+  try {
+    // 添加短暂延迟以显示加载状态
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    if (feature.route) {
+      await router.push(feature.route)
+      ElMessage.success(`正在打开 ${feature.name}...`)
+    } else {
+      ElMessage.info(`${feature.name} 功能开发中，敬请期待！`)
+    }
+  } catch (error) {
+    ElMessage.error('操作失败，请重试')
+    console.error('Feature open error:', error)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -506,6 +493,45 @@ onMounted(() => {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
+.action-card.featured {
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card.featured::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.action-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff4757;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
 .action-icon {
   font-size: 32px;
 }
@@ -574,12 +600,29 @@ onMounted(() => {
   transition: all 0.3s ease;
   border: 1px solid var(--border-color);
   position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
 }
 
 .feature-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
   border-color: var(--accent-color);
+}
+
+.feature-card:hover::before {
+  transform: scaleX(1);
 }
 
 .card-icon {
@@ -650,6 +693,8 @@ onMounted(() => {
   font-size: 14px;
   color: var(--text-color-secondary);
 }
+
+
 
 @media (max-width: 768px) {
   .quick-actions {
