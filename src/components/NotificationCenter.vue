@@ -133,7 +133,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { Bell, Warning, Success, Info, Clock, ShoppingCart, Refresh, Star } from '@element-plus/icons-vue'
+import { Bell, Warning, SuccessFilled, InfoFilled, Clock, ShoppingCart, Refresh, Star } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pluginService } from '../services/pluginService.js'
 import { useRouter } from 'vue-router'
@@ -258,14 +258,14 @@ const handleAction = async (notification) => {
 
 const getNotificationIcon = (type) => {
   switch (type) {
-    case 'success': return Success
+    case 'success': return SuccessFilled
     case 'warning': return Warning
     case 'trial_warning': return Clock
     case 'trial_expired': return Warning
     case 'plugin_update': return Refresh
     case 'plugin_install': return ShoppingCart
     case 'plugin_purchase': return Star
-    case 'info': return Info
+    case 'info': return InfoFilled
     default: return Bell
   }
 }

@@ -8,6 +8,7 @@ import ImageTools from '../components/ImageTools.vue'
 import VideoTools from '../components/VideoTools.vue'
 import StrategyManagement from '../components/StrategyManagement.vue'
 import PluginMarket from '../components/PluginMarket.vue'
+import ImageGeneratorTest from '../components/ImageGeneratorTest.vue'
 
 const routes = [
   {
@@ -241,6 +242,26 @@ const routes = [
       title: '一键发布',
       icon: 'upload',
       description: '多平台一键发布'
+    }
+  },
+  {
+    path: '/script-writer-test',
+    name: 'ScriptWriterTest',
+    component: () => import('../components/ScriptWriterTest.vue'),
+    meta: {
+      title: 'GLM脚本创作测试',
+      icon: 'VideoPlay',
+      category: 'AI工具'
+    }
+  },
+  {
+    path: '/test-ai-image',
+    name: 'TestAiImage',
+    component: ImageGeneratorTest,
+    meta: {
+      title: 'AI图片生成测试',
+      icon: 'picture',
+      description: 'AI图片生成功能测试'
     }
   },
   {

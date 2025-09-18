@@ -404,6 +404,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { MagicStick, FolderOpened, FolderAdd, Search, Refresh, Download, Picture, PictureRounded, VideoCamera, CopyDocument } from '@element-plus/icons-vue'
 import SmartRecommendations from './SmartRecommendations.vue'
 import CacheManager from './CacheManager.vue'
+import * as XLSX from 'xlsx'
+import { glmApiService } from '../services/glmApiService.js'
 
 const projectPath = ref('')
 const projectSearch = ref('')
@@ -465,8 +467,412 @@ const generateScript = async () => {
 
   loading.value = true
   
-  // 模拟AI处理时间
-  await new Promise(resolve => setTimeout(resolve, 2000))
+  try {
+    // 检查GLM API配置
+    if (!glmApiService.isConfigured()) {
+      ElMessage.error('GLM API未配置，请联系管理员设置API密钥')
+      loading.value = false
+      return
+    }
+
+    if (form.storyboardMode) {
+      // 分镜脚本模式 - 使用GLM API生成
+      await generateStoryboardWithGLM()
+    } else {
+      // 标准模式 - 使用GLM API生成
+      await generateStandardScriptWithGLM()
+    }
+    
+    ElMessage.success('AI脚本生成完成！')
+  } catch (error) {
+    console.error('GLM API调用失败:', error)
+    ElMessage.warning('AI服务暂时不可用，使用本地模板生成')
+    
+    // 降级到本地生成
+    await generateLocalScript()
+  } finally {
+    loading.value = false
+  }
+}
+
+// 使用GLM API生成分镜脚本
+const generateStoryboardWithGLM = async () => {
+  const prompt = buildStoryboardPrompt()
+  
+  const response = await glmApiService.generateContent(prompt, 'tutorial', {
+    temperature: 0.8,
+    maxTokens: 3000
+  })
+  
+  const parsedResult = parseStoryboardResponse(response.content)
+  
+  result.value = {
+    storyboard: parsedResult.storyboard,
+    imagePrompts: parsedResult.imagePrompts,
+    videoPrompts: parsedResult.videoPrompts,
+    synopsis: parsedResult.synopsis,
+    scenePreset: parsedResult.scenePreset,
+    characterPreset: parsedResult.characterPreset,
+    tableData: parsedResult.tableData
+  }
+  
+  tableData.value = result.value.tableData
+}
+
+// 使用GLM API生成标准脚本
+const generateStandardScriptWithGLM = async () => {
+  const prompt = buildStandardScriptPrompt()
+  
+  const response = await glmApiService.generateContent(prompt, 'article', {
+    temperature: 0.7,
+    maxTokens: 2500
+  })
+  
+  const parsedResult = parseStandardScriptResponse(response.content)
+  
+  result.value = {
+    synopsis: parsedResult.synopsis,
+    scenePreset: parsedResult.scenePreset,
+    characterPreset: parsedResult.characterPreset,
+    tableData: parsedResult.tableData
+  }
+  
+  tableData.value = result.value.tableData
+}
+
+// 构建分镜脚本提示词
+const buildStoryboardPrompt = () => {
+  const styleTemplates = {
+    'cyberpunk': {
+      description: '赛博朋克风格：霓虹灯闪烁的未来都市，高科技与低生活的对比，暗黑科幻氛围',
+      visualElements: '全息投影、霓虹灯光、机械义肢、飞行汽车、摩天大楼、雨夜街道',
+      colorPalette: '蓝紫色调、霓虹粉、电光蓝、暗黑背景',
+      atmosphere: '神秘、压抑、科技感、未来感',
+      typicalScenes: '夜晚都市街道、高科技实验室、地下酒吧、摩天大楼顶层'
+    },
+    'sci-fi': {
+      description: '科幻风格：宇宙探索，先进科技，外星文明，时空旅行',
+      visualElements: '宇宙飞船、外星建筑、能量武器、传送门、机器人、星空背景',
+      colorPalette: '银白色调、蓝光特效、星空深蓝、金属质感',
+      atmosphere: '宏大、神秘、探索感、科技感',
+      typicalScenes: '宇宙飞船内部、外星星球表面、太空站、科研基地'
+    },
+    'fantasy-guofeng': {
+      description: '国风奇幻：古代仙侠世界，山水如画，仙气缭绕，传统文化元素',
+      visualElements: '古代建筑、山水景观、仙鹤飞舞、云雾缭绕、古装服饰、法术特效',
+      colorPalette: '水墨色调、青山绿水、金色装饰、白色仙气',
+      atmosphere: '飘逸、古典、仙气、诗意',
+      typicalScenes: '山峰云海、古代宫殿、竹林小径、瀑布仙境'
+    },
+    'slice-of-life': {
+      description: '日常生活：温馨治愈，真实生活场景，人物情感细腻',
+      visualElements: '家庭环境、学校场景、咖啡厅、公园、日常用品、温馨装饰',
+      colorPalette: '暖色调、自然光线、柔和色彩、生活化配色',
+      atmosphere: '温馨、治愈、真实、亲切',
+      typicalScenes: '家庭客厅、学校教室、街边咖啡厅、公园长椅'
+    }
+  }
+  
+  const cameraMovements = {
+    'static': '静态镜头，稳定构图，突出画面细节',
+    'push_pull': '推拉镜头，景深变化，营造空间感',
+    'pan': '摇摄镜头，水平移动，展现环境全貌',
+    'tracking': '跟拍镜头，跟随主体，增强代入感',
+    'rotation': '旋转镜头，环绕拍摄，展现立体空间',
+    'crane': '升降镜头，垂直运动，营造气势感'
+  }
+  
+  const lightingEffects = {
+    'natural': '自然光照，真实光影，日常氛围',
+    'dramatic': '戏剧性光影，强烈对比，情绪渲染',
+    'neon': '霓虹灯光，色彩斑斓，未来科技感',
+    'backlight': '逆光剪影，轮廓突出，艺术美感',
+    'soft': '柔光滤镜，温和氛围，治愈感觉',
+    'hard': '硬光对比，锐利边缘，紧张感'
+  }
+  
+  const currentStyle = styleTemplates[form.style] || {
+    description: form.style,
+    visualElements: '根据风格设计',
+    colorPalette: '符合风格的色彩',
+    atmosphere: '风格化氛围',
+    typicalScenes: '风格化场景'
+  }
+  
+  // 根据故事主题和风格生成专业提示词
+  const storyContext = form.storyOutline || `围绕"${form.topic}"展开的${form.style}风格故事`
+  const characterContext = form.characterBio || `符合${form.style}风格的主角设定`
+  
+  return `你是一位专业的影视分镜脚本创作专家，请为以下项目创作一个完整的分镜脚本：
+
+**项目概述：**
+- 核心主题：${form.topic}
+- 视觉风格：${currentStyle.description}
+- 镜头总数：${form.shots}个
+- 预估总时长：${Math.floor(form.shots * 4)}秒左右
+
+**风格指导：**
+- 视觉元素：${currentStyle.visualElements}
+- 色彩基调：${currentStyle.colorPalette}
+- 氛围营造：${currentStyle.atmosphere}
+- 典型场景：${currentStyle.typicalScenes}
+
+**技术参数：**
+- 画面品质：${form.visualStyle || '电影级画质，4K分辨率'}
+- 镜头运动：${cameraMovements[form.cameraMovement] || '自然流畅的镜头运动'}
+- 光影效果：${lightingEffects[form.lightingEffect] || '自然真实的光影'}
+- 色彩调性：${form.colorTone || '符合风格的自然色调'}
+
+**故事内容：**
+- 故事大纲：${storyContext}
+- 角色设定：${characterContext}
+- 必含场景：${form.specificScenes || '无特殊要求'}
+- 避免内容：${form.negativePrompt || '无特殊限制'}
+
+**创作要求：**
+1. 严格按照电影工业标准创作分镜脚本
+2. 每个镜头都要有明确的视觉描述和情绪表达
+3. 镜头之间要有流畅的逻辑连接和节奏变化
+4. 生成适合AI工具使用的高质量英文提示词
+5. 充分体现${form.style}风格的视觉特色
+6. 控制总时长在合理范围内，确保故事完整性
+
+请严格按照以下JSON格式输出结果：
+
+{
+  "synopsis": "故事简介（180-220字，包含主题、冲突、结局）",
+  "scenePreset": "场景预设（详细描述主要拍摄场景的视觉特征、氛围营造）",
+  "characterPreset": "人物预设（主要角色的外观、性格、服装、特征描述）",
+  "storyboard": [
+    {
+      "shot": 1,
+      "type": "镜头类型（远景/全景/中景/近景/特写/大特写）",
+      "description": "详细的场景描述（包含环境、人物动作、情绪表达）",
+      "duration": "镜头时长（秒数，整数）",
+      "cameraMovement": "具体的镜头运动描述",
+      "lighting": "光影效果的详细描述",
+      "mood": "情绪氛围和视觉感受"
+    }
+  ],
+  "imagePrompts": [
+    {
+      "shot": 1,
+      "prompt": "高质量的英文AI绘画提示词（包含风格、构图、光影、色彩）",
+      "style": "具体的画面风格标签"
+    }
+  ],
+  "videoPrompts": [
+    {
+      "shot": 1,
+      "prompt": "英文AI视频生成提示词（强调运动和动态效果）",
+      "motion": "具体的运动描述"
+    }
+  ]
+}
+
+注意：请确保返回的是完整、有效的JSON格式，不要包含任何额外的文字说明。`
+}
+
+// 构建标准脚本提示词
+const buildStandardScriptPrompt = () => {
+  const genreTemplates = {
+    'cyberpunk': {
+      description: '赛博朋克：未来科技都市，霓虹灯光，高科技低生活',
+      themes: '科技与人性、阶级分化、身份认同、反抗与自由',
+      plotElements: '黑客入侵、企业阴谋、义体改造、虚拟现实、地下反抗',
+      characterTypes: '黑客、企业特工、改造人、AI、底层民众',
+      conflictTypes: '人机对抗、阶级冲突、身份危机、道德选择'
+    },
+    'sci-fi': {
+      description: '科幻：太空探索，先进文明，科技奇观',
+      themes: '探索未知、文明冲突、科技伦理、时空概念',
+      plotElements: '星际旅行、外星接触、时间旅行、科技发明、宇宙奥秘',
+      characterTypes: '宇航员、科学家、外星人、AI、未来人类',
+      conflictTypes: '文明冲突、科技危机、时空悖论、道德抉择'
+    },
+    'fantasy-guofeng': {
+      description: '国风奇幻：古代仙侠，山水诗意，传统文化',
+      themes: '修仙悟道、情义恩仇、天人合一、传统美德',
+      plotElements: '修炼升级、门派争斗、寻宝历险、情缘纠葛、天劫考验',
+      characterTypes: '修仙者、门派弟子、妖魔、仙人、凡人',
+      conflictTypes: '正邪对立、情理冲突、天人考验、道心磨练'
+    },
+    'slice-of-life': {
+      description: '日常治愈：温馨生活，真实情感，细腻描写',
+      themes: '成长蜕变、人际关系、生活感悟、情感治愈',
+      plotElements: '日常互动、情感交流、生活挑战、温馨时刻、成长体验',
+      characterTypes: '学生、上班族、家庭成员、朋友、邻居',
+      conflictTypes: '内心成长、人际矛盾、生活压力、情感困扰'
+    }
+  }
+  
+  const currentGenre = genreTemplates[form.style] || {
+    description: form.style,
+    themes: '符合风格的主题',
+    plotElements: '风格化情节元素',
+    characterTypes: '风格化角色类型',
+    conflictTypes: '风格化冲突类型'
+  }
+  
+  // 智能分析用户输入，生成更精准的提示词
+  const storyContext = form.storyOutline || `以"${form.topic}"为核心的${form.style}风格故事`
+  const characterContext = form.characterBio || `${form.style}风格的主角，与"${form.topic}"主题相关`
+  const sceneRequirements = form.specificScenes ? `必须包含以下场景：${form.specificScenes}` : '场景设计自由发挥'
+  const contentRestrictions = form.negativePrompt ? `避免以下内容：${form.negativePrompt}` : '无特殊内容限制'
+  
+  return `你是一位资深的影视编剧，擅长创作${form.style}类型的作品。请为以下项目创作一个完整的影视脚本：
+
+**项目基础信息：**
+- 核心主题：${form.topic}
+- 类型风格：${currentGenre.description}
+- 预计镜头：${form.shots}个场景
+- 目标时长：${Math.floor(form.shots * 4)}秒左右
+
+**类型特色指导：**
+- 核心主题：${currentGenre.themes}
+- 情节元素：${currentGenre.plotElements}
+- 角色类型：${currentGenre.characterTypes}
+- 冲突设计：${currentGenre.conflictTypes}
+
+**创作素材：**
+- 故事背景：${storyContext}
+- 角色设定：${characterContext}
+- 场景要求：${sceneRequirements}
+- 内容限制：${contentRestrictions}
+
+**专业要求：**
+1. 故事结构完整：开端-发展-高潮-结局的经典三幕式结构
+2. 角色塑造立体：主角要有明确的目标、障碍和成长弧线
+3. 冲突设计合理：外在冲突与内在冲突相结合
+4. 视觉化表达：每个场景都要具有强烈的画面感
+5. 情感共鸣：符合${form.style}类型的情感基调
+6. 节奏控制：张弛有度，符合影视节奏规律
+
+请严格按照以下JSON格式创作脚本：
+
+{
+  "synopsis": "故事简介（150-200字）：包含主角、目标、障碍、转折、结局的完整故事概述",
+  "scenePreset": "场景设定：详细描述主要拍摄场景的视觉特征、氛围营造、${form.style}风格体现",
+  "characterPreset": "角色设定：主要角色的外观、性格、背景、动机、成长弧线的详细描述",
+  "tableData": [
+    {
+      "shot": 1,
+      "content": "场景内容：具体的情节发展、角色行为、情感变化、视觉呈现",
+      "duration": "时长（秒数，整数）",
+      "notes": "制作备注：镜头类型、情绪基调、重点表现、技术要求"
+    }
+  ]
+}
+
+**创作重点：**
+- 确保故事逻辑清晰，情节发展自然
+- 每个场景都要推进故事发展或深化角色
+- 充分体现${form.style}类型的特色和魅力
+- 场景描述要具有强烈的视觉冲击力
+- 对话和行为要符合角色性格设定
+- 整体节奏要符合${Math.floor(form.shots * 4)}秒的时长要求
+
+注意：请确保返回完整有效的JSON格式，不要包含任何额外说明文字。`
+}
+
+// 解析分镜脚本响应
+const parseStoryboardResponse = (content) => {
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      
+      // 转换为组件需要的格式
+      const tableData = parsed.storyboard?.map(shot => ({
+        shot: shot.shot,
+        content: shot.description,
+        duration: shot.duration,
+        notes: `${shot.type}，${shot.mood || ''}`
+      })) || []
+      
+      return {
+        synopsis: parsed.synopsis || `${form.topic}的${form.style}风格分镜脚本`,
+        scenePreset: parsed.scenePreset || `${form.style}风格场景设定`,
+        characterPreset: parsed.characterPreset || '角色设定',
+        storyboard: parsed.storyboard || [],
+        imagePrompts: parsed.imagePrompts || [],
+        videoPrompts: parsed.videoPrompts || [],
+        tableData
+      }
+    }
+  } catch (e) {
+    console.warn('无法解析JSON格式，使用文本解析')
+  }
+  
+  // 文本解析降级方案
+  return parseTextResponse(content, true)
+}
+
+// 解析标准脚本响应
+const parseStandardScriptResponse = (content) => {
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      return {
+        synopsis: parsed.synopsis || `${form.topic}的${form.style}风格故事`,
+        scenePreset: parsed.scenePreset || `${form.style}风格场景`,
+        characterPreset: parsed.characterPreset || '角色设定',
+        tableData: parsed.tableData || []
+      }
+    }
+  } catch (e) {
+    console.warn('无法解析JSON格式，使用文本解析')
+  }
+  
+  return parseTextResponse(content, false)
+}
+
+// 文本解析降级方案
+const parseTextResponse = (content, isStoryboard) => {
+  const lines = content.split('\n').filter(line => line.trim())
+  
+  const synopsis = lines.find(line => line.includes('简介') || line.includes('故事'))?.replace(/.*[:：]/, '') || 
+                  `这是一个关于${form.topic}的${form.style}风格故事`
+  
+  const scenePreset = lines.find(line => line.includes('场景') || line.includes('设定'))?.replace(/.*[:：]/, '') || 
+                     `${form.style}风格的视觉场景设定`
+  
+  const characterPreset = lines.find(line => line.includes('角色') || line.includes('人物'))?.replace(/.*[:：]/, '') || 
+                         `${form.topic}相关的角色设定`
+  
+  const tableData = Array.from({ length: form.shots }, (_, i) => ({
+    shot: i + 1,
+    content: `第${i + 1}个镜头：${form.topic}的${form.style}风格场景`,
+    duration: Math.floor(Math.random() * 5) + 3,
+    notes: `${form.style}风格镜头`
+  }))
+  
+  const result = {
+    synopsis,
+    scenePreset, 
+    characterPreset,
+    tableData
+  }
+  
+  if (isStoryboard) {
+    result.storyboard = tableData.map(item => ({
+      shot: item.shot,
+      type: ['远景', '中景', '近景', '特写'][Math.floor(Math.random() * 4)],
+      description: item.content,
+      duration: item.duration
+    }))
+    result.imagePrompts = []
+    result.videoPrompts = []
+  }
+  
+  return result
+}
+
+// 本地降级生成
+const generateLocalScript = async () => {
+  // 模拟处理时间
+  await new Promise(resolve => setTimeout(resolve, 1500))
   
   if (form.storyboardMode) {
     // 分镜脚本模式
@@ -504,8 +910,6 @@ const generateScript = async () => {
   }
   
   tableData.value = result.value.tableData
-  loading.value = false
-  ElMessage.success('AI脚本生成完成！')
 }
 
 const regeneratePart = (part) => {

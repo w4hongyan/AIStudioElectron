@@ -23,16 +23,28 @@
           <div class="prompt-section">
             <div class="prompt-header">
               <label>正向提示词</label>
-              <el-button 
-                size="small" 
-                type="primary" 
-                :loading="isOptimizing"
-                @click="optimizePrompt"
-                :disabled="!positivePrompt.trim()"
-              >
-                <el-icon><MagicStick /></el-icon>
-                AI优化
-              </el-button>
+              <div class="prompt-actions">
+                <el-button 
+                  size="small" 
+                  type="success" 
+                  :loading="isOptimizing"
+                  @click="generateSmartPrompt"
+                  :disabled="!positivePrompt.trim()"
+                >
+                  <el-icon><MagicStick /></el-icon>
+                  智能生成
+                </el-button>
+                <el-button 
+                  size="small" 
+                  type="primary" 
+                  :loading="isOptimizing"
+                  @click="optimizePrompt"
+                  :disabled="!positivePrompt.trim()"
+                >
+                  <el-icon><MagicStick /></el-icon>
+                  AI优化
+                </el-button>
+              </div>
             </div>
             <el-input
               v-model="positivePrompt"
@@ -186,6 +198,7 @@ import { Picture, ZoomIn, Download, Refresh, MagicStick } from '@element-plus/ic
 import { ElMessage } from 'element-plus'
 import { stylePresets, defaultImageSize, imageSizeOptions } from '../config/imageGenerator.config.js'
 import aiService from '../services/aiService'
+import { glmApiService } from '../services/glmApiService.js'
 
 const positivePrompt = ref('')
 const negativePrompt = ref('')
@@ -208,7 +221,188 @@ const previewDialog = reactive({
   image: null
 })
 
-const formatDate = (date) => new Date(date).toLocaleString()
+// 添加智能提示词生成功能
+const generateSmartPrompt = async () => {
+  if (!positivePrompt.value.trim()) {
+    ElMessage.warning('请先输入基础描述')
+    return
+  }
+  
+  isOptimizing.value = true
+  try {
+    // 检查GLM API配置
+    const isGlmConfigured = await glmApiService.checkConfiguration()
+    
+    if (isGlmConfigured) {
+      const styleInfo = stylePresets.find(s => s.id === selectedStyle.value)
+      const smartPrompt = buildSmartPromptRequest(positivePrompt.value, styleInfo, imageSize.value)
+      
+      const result = await glmApiService.generateContent(smartPrompt, {
+        temperature: 0.8,
+        max_tokens: 1000,
+        top_p: 0.95
+      })
+      
+      if (result.success && result.content) {
+        const enhancedPrompt = parseSmartPromptResponse(result.content)
+        positivePrompt.value = enhancedPrompt.positive
+        if (enhancedPrompt.negative) {
+          negativePrompt.value = enhancedPrompt.negative
+        }
+        ElMessage.success('GLM AI已为您生成专业提示词')
+        return
+      }
+    }
+    
+    // 降级到本地智能生成
+    const localSmart = generateSmartPromptLocally(positivePrompt.value, selectedStyle.value)
+    positivePrompt.value = localSmart.positive
+    negativePrompt.value = localSmart.negative
+    ElMessage.success('已生成智能提示词')
+    
+  } catch (error) {
+    console.error('智能提示词生成失败:', error)
+    ElMessage.error('生成失败，请重试')
+  } finally {
+    isOptimizing.value = false
+  }
+}
+
+// 构建智能提示词生成请求
+const buildSmartPromptRequest = (userInput, styleInfo, imageSize) => {
+  return `你是一位顶级的AI绘画提示词专家。基于用户的简单描述，生成专业的正向和负向提示词。
+
+## 用户输入
+用户描述：${userInput}
+选择风格：${styleInfo?.name || '写实风格'}
+图片尺寸：${imageSize}
+
+## 任务要求
+1. **正向提示词**：基于用户描述，生成详细的英文提示词
+   - 主体描述要具体生动
+   - 添加适合的风格关键词
+   - 包含构图、光影、色彩指导
+   - 添加质量提升关键词
+   
+2. **负向提示词**：生成相应的负向提示词
+   - 排除低质量元素
+   - 排除不符合风格的元素
+   - 排除常见的AI生成缺陷
+
+## 风格特色
+${getAdvancedStyleGuidance(styleInfo?.id)}
+
+## 输出格式
+请严格按照以下JSON格式输出：
+{
+  "positive": "详细的正向提示词",
+  "negative": "相应的负向提示词",
+  "explanation": "简短的创作思路说明"
+}
+
+生成结果：`
+}
+
+// 获取高级风格指导
+const getAdvancedStyleGuidance = (styleId) => {
+  const advancedGuidance = {
+    'realistic': `写实摄影风格：
+- 关键词：photorealistic, ultra detailed, 8k resolution, professional photography, sharp focus, natural lighting
+- 构图：rule of thirds, depth of field, bokeh effect
+- 质量：masterpiece, award winning photography, high dynamic range`,
+    
+    'anime': `日式动漫风格：
+- 关键词：anime style, manga art, cel shading, vibrant colors, detailed character design
+- 特色：large expressive eyes, dynamic poses, clean line art
+- 质量：studio quality, official art, highly detailed`,
+    
+    'oil-painting': `古典油画风格：
+- 关键词：oil painting, classical art, renaissance style, rich textures, brush strokes
+- 技法：chiaroscuro lighting, warm color palette, traditional composition
+- 质量：museum quality, fine art, masterful technique`,
+    
+    'watercolor': `水彩画风格：
+- 关键词：watercolor painting, soft washes, flowing colors, paper texture, artistic
+- 技法：wet on wet technique, color bleeding, transparent layers
+- 质量：traditional media, artistic expression, delicate details`,
+    
+    'sketch': `素描风格：
+- 关键词：pencil sketch, line art, crosshatching, detailed shading, monochrome
+- 技法：graphite drawing, fine linework, tonal values
+- 质量：technical drawing, precise details, artistic skill`,
+    
+    'cyberpunk': `赛博朋克风格：
+- 关键词：cyberpunk aesthetic, neon lights, futuristic cityscape, high tech low life
+- 氛围：dark atmosphere, rain reflections, holographic displays, urban decay
+- 质量：cinematic lighting, detailed environment, atmospheric mood`
+  }
+  return advancedGuidance[styleId] || advancedGuidance['realistic']
+}
+
+// 解析智能提示词响应
+const parseSmartPromptResponse = (content) => {
+  try {
+    // 尝试解析JSON
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      return {
+        positive: parsed.positive || '',
+        negative: parsed.negative || '',
+        explanation: parsed.explanation || ''
+      }
+    }
+  } catch (error) {
+    console.warn('JSON解析失败，使用文本解析')
+  }
+  
+  // 文本解析降级方案
+  const lines = content.split('\n').filter(line => line.trim())
+  let positive = ''
+  let negative = ''
+  
+  for (const line of lines) {
+    if (line.includes('positive') || line.includes('正向')) {
+      positive = line.replace(/.*[:：]\s*/, '').replace(/["""]/g, '').trim()
+    } else if (line.includes('negative') || line.includes('负向')) {
+      negative = line.replace(/.*[:：]\s*/, '').replace(/["""]/g, '').trim()
+    }
+  }
+  
+  return { positive: positive || content.trim(), negative }
+}
+
+// 本地智能提示词生成（降级方案）
+const generateSmartPromptLocally = (userInput, styleId) => {
+  const styleTemplates = {
+    'realistic': {
+      positive: `${userInput}, photorealistic, ultra detailed, 8k resolution, professional photography, sharp focus, natural lighting, masterpiece, award winning photography`,
+      negative: 'blurry, low quality, pixelated, cartoon, anime, painting, sketch, low resolution, bad anatomy'
+    },
+    'anime': {
+      positive: `${userInput}, anime style, manga art, cel shading, vibrant colors, detailed character design, studio quality, official art, highly detailed`,
+      negative: 'realistic, photographic, 3d render, blurry, low quality, bad anatomy, deformed, ugly'
+    },
+    'oil-painting': {
+      positive: `${userInput}, oil painting, classical art, renaissance style, rich textures, brush strokes, museum quality, fine art, masterful technique`,
+      negative: 'digital art, anime, cartoon, low quality, modern style, flat colors, simple'
+    },
+    'watercolor': {
+      positive: `${userInput}, watercolor painting, soft washes, flowing colors, paper texture, artistic, traditional media, delicate details`,
+      negative: 'digital art, sharp edges, harsh colors, low quality, photographic, 3d render'
+    },
+    'sketch': {
+      positive: `${userInput}, pencil sketch, line art, crosshatching, detailed shading, monochrome, technical drawing, artistic skill`,
+      negative: 'colored, painted, low quality, blurry, photographic, digital art, simple'
+    },
+    'cyberpunk': {
+      positive: `${userInput}, cyberpunk aesthetic, neon lights, futuristic cityscape, dark atmosphere, cinematic lighting, detailed environment`,
+      negative: 'bright daylight, natural, rural, low tech, simple, low quality, blurry'
+    }
+  }
+  
+  return styleTemplates[styleId] || styleTemplates['realistic']
+}
 
 // AI提示词优化
 const optimizePrompt = async () => {
@@ -216,6 +410,29 @@ const optimizePrompt = async () => {
   
   isOptimizing.value = true
   try {
+    // 检查GLM API配置
+    const isGlmConfigured = await glmApiService.checkConfiguration()
+    
+    if (isGlmConfigured) {
+      // 使用GLM API进行提示词优化
+      const styleInfo = stylePresets.find(s => s.id === selectedStyle.value)
+      const optimizationPrompt = buildPromptOptimizationPrompt(positivePrompt.value, styleInfo, imageSize.value)
+      
+      const result = await glmApiService.generateContent(optimizationPrompt, {
+        temperature: 0.7,
+        max_tokens: 800,
+        top_p: 0.9
+      })
+      
+      if (result.success && result.content) {
+        const optimizedPrompt = parseOptimizedPrompt(result.content)
+        positivePrompt.value = optimizedPrompt
+        ElMessage.success('GLM AI已优化您的提示词')
+        return
+      }
+    }
+    
+    // 降级到原有aiService
     const styleInfo = stylePresets.find(s => s.id === selectedStyle.value)
     const optimizationPrompt = `请优化以下图片生成提示词，使其更加专业和详细。
 
@@ -266,6 +483,70 @@ const optimizePrompt = async () => {
   }
 }
 
+// 构建GLM提示词优化请求
+const buildPromptOptimizationPrompt = (originalPrompt, styleInfo, imageSize) => {
+  return `你是一位专业的AI绘画提示词优化专家。请优化以下图片生成提示词，使其更加专业、详细和有效。
+
+## 原始信息
+- 用户提示词：${originalPrompt}
+- 选择风格：${styleInfo?.name || '默认风格'}
+- 图片尺寸：${imageSize}
+
+## 优化要求
+1. **主体描述**：明确描述画面主体，包含细节特征
+2. **风格定义**：根据选择的风格添加相应的艺术风格关键词
+3. **技术参数**：添加适合的技术质量关键词
+4. **构图指导**：包含构图、视角、光影等专业术语
+5. **质量提升**：添加高质量、高分辨率等关键词
+
+## 风格指导
+${getStyleGuidance(styleInfo?.id)}
+
+## 输出格式
+请直接输出优化后的英文提示词，不要包含任何解释或其他内容。提示词应该简洁明了，用逗号分隔关键词。
+
+优化后的提示词：`
+}
+
+// 获取风格指导
+const getStyleGuidance = (styleId) => {
+  const styleGuidance = {
+    'realistic': '写实风格：使用photorealistic, ultra detailed, high resolution, professional photography等关键词',
+    'anime': '动漫风格：使用anime style, manga, cel shading, vibrant colors, detailed character design等关键词',
+    'oil-painting': '油画风格：使用oil painting, classical art, brush strokes, traditional painting, artistic等关键词',
+    'watercolor': '水彩风格：使用watercolor painting, soft colors, artistic, traditional media, flowing colors等关键词',
+    'sketch': '素描风格：使用pencil sketch, line art, monochrome, artistic drawing, detailed linework等关键词',
+    'cyberpunk': '赛博朋克风格：使用cyberpunk style, neon lights, futuristic, high tech, dark atmosphere等关键词'
+  }
+  return styleGuidance[styleId] || styleGuidance['realistic']
+}
+
+// 解析优化后的提示词
+const parseOptimizedPrompt = (content) => {
+  // 移除可能的前缀文字，提取纯提示词
+  let prompt = content.trim()
+  
+  // 查找"优化后的提示词："之后的内容
+  const promptMatch = prompt.match(/优化后的提示词[：:]\s*(.+)/i)
+  if (promptMatch) {
+    prompt = promptMatch[1].trim()
+  }
+  
+  // 移除引号
+  prompt = prompt.replace(/^["']|["']$/g, '')
+  
+  // 确保是英文提示词
+  if (/[\u4e00-\u9fa5]/.test(prompt)) {
+    // 如果包含中文，尝试提取英文部分
+    const englishParts = prompt.match(/[a-zA-Z][^，。！？]*[a-zA-Z]/g)
+    if (englishParts && englishParts.length > 0) {
+      prompt = englishParts.join(', ')
+    }
+  }
+  
+  return prompt
+}
+
 // 本地提示词优化（降级方案）
 const optimizePromptLocally = (prompt, style) => {
   const styleKeywords = {
@@ -309,7 +590,7 @@ const generateImage = async () => {
       id: Date.now() + i,
       url: `https://via.placeholder.com/${imageSize.value.split('x')[0]}x${imageSize.value.split('x')[1]}/?text=AI+Image+${i+1}`,
       prompt: positivePrompt.value,
-      style: stylePresets.value.find(s => s.id === selectedStyle.value)?.name || '默认',
+      style: stylePresets.find(s => s.id === selectedStyle.value)?.name || '默认',
       createdAt: new Date()
     }
     newImages.push(image)
@@ -337,9 +618,11 @@ const regenerateImage = (index) => {
   generateImage()
 }
 
+const formatDate = (date) => new Date(date).toLocaleString()
+
 const loadHistory = (item) => {
   positivePrompt.value = item.prompt
-  selectedStyle.value = stylePresets.value.find(s => s.name === item.style)?.id || 'realistic'
+  selectedStyle.value = stylePresets.find(s => s.name === item.style)?.id || 'realistic'
 }
 
 onMounted(() => {
@@ -380,6 +663,10 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+}
+.prompt-actions {
+  display: flex;
+  gap: 8px;
 }
 .prompt-section label, .style-presets label, .parameters h4, .param-row label {
   display: block;

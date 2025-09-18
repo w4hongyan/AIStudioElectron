@@ -229,6 +229,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { glmApiService } from '../services/glmApiService.js'
 
 // 响应式数据
 const currentStep = ref(0)
@@ -386,31 +387,185 @@ const previousStep = () => {
 const startGeneration = async () => {
   generationProgress.value = 0
   generationStatus.value = ''
-  generationMessage.value = '正在分析主题...'
+  generationMessage.value = '正在连接GLM AI...'
   
-  // 模拟AI生成过程
-  const steps = [
-    { progress: 25, message: '分析热门话题...' },
-    { progress: 50, message: '生成内容框架...' },
-    { progress: 75, message: '优化文案表达...' },
-    { progress: 100, message: '添加热门标签...' }
-  ]
-  
-  for (const step of steps) {
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    generationProgress.value = step.progress
-    generationMessage.value = step.message
+  try {
+    // 检查GLM API配置
+    if (!glmApiService.isConfigured()) {
+      ElMessage.error('GLM API未配置，请联系管理员设置API密钥')
+      return
+    }
+
+    // 构建AI生成提示词
+    const prompt = buildGenerationPrompt()
+    
+    // 实际的AI生成步骤
+    const steps = [
+      { progress: 20, message: '正在分析主题和关键词...' },
+      { progress: 40, message: '连接GLM-4-Flash模型...' },
+      { progress: 60, message: 'AI正在创作内容...' },
+      { progress: 80, message: '优化文案表达和结构...' },
+      { progress: 95, message: '生成热门标签...' }
+    ]
+    
+    // 显示进度
+    for (let i = 0; i < steps.length - 1; i++) {
+      generationProgress.value = steps[i].progress
+      generationMessage.value = steps[i].message
+      await new Promise(resolve => setTimeout(resolve, 800))
+    }
+    
+    // 调用GLM API生成内容
+    generationProgress.value = 60
+    generationMessage.value = 'GLM AI正在创作内容...'
+    
+    const response = await glmApiService.generateContent(prompt, getContentType(), {
+      temperature: 0.8,
+      maxTokens: 2048
+    })
+    
+    // 解析生成的内容
+    const parsedContent = parseGeneratedContent(response.content)
+    
+    // 完成进度
+    generationProgress.value = 100
+    generationMessage.value = '内容生成完成！'
+    generationStatus.value = 'success'
+    
+    // 设置生成的内容
+    generatedContent.value = {
+      title: parsedContent.title || `${contentTheme.value} | ${targetPlatformName.value}精选内容`,
+      content: parsedContent.content || response.content,
+      hashtags: parsedContent.hashtags || generateHashtags()
+    }
+    
+    ElMessage.success('AI内容生成成功！')
+    currentStep.value++
+    
+  } catch (error) {
+    console.error('GLM API调用失败:', error)
+    generationStatus.value = 'exception'
+    generationMessage.value = '生成失败，正在使用备用方案...'
+    
+    // 降级到本地模板生成
+    await fallbackGeneration()
+    
+    ElMessage.warning('AI服务暂时不可用，已使用本地模板生成内容')
+  }
+}
+
+// 构建GLM生成提示词
+const buildGenerationPrompt = () => {
+  const platformMap = {
+    xiaohongshu: '小红书',
+    douyin: '抖音',
+    bilibili: 'B站',
+    wechat: '微信公众号'
   }
   
-  generationStatus.value = 'success'
+  const styleMap = {
+    casual: '轻松幽默',
+    professional: '专业权威', 
+    warm: '温暖治愈',
+    trendy: '潮流时尚'
+  }
   
-  // 生成示例内容
+  const typeMap = {
+    social_post: '社交媒体短文案',
+    article: '深度文章',
+    video_script: '视频脚本',
+    product_review: '产品测评'
+  }
+  
+  const platform = platformMap[targetPlatform.value] || '社交媒体'
+  const style = styleMap[contentStyle.value] || '自然'
+  const type = typeMap[selectedType.value?.id] || '内容'
+  const keywords = selectedKeywords.value.join('、') || ''
+  
+  return `请为${platform}平台创作一篇关于"${contentTheme.value}"的${type}，要求：
+
+1. 内容风格：${style}
+2. 目标平台：${platform}
+3. 相关关键词：${keywords}
+4. 内容类型：${type}
+
+请生成以下格式的内容：
+{
+  "title": "吸引人的标题",
+  "content": "完整的正文内容，适合${platform}平台特点",
+  "hashtags": ["相关标签1", "相关标签2", "相关标签3"]
+}
+
+要求：
+- 标题要有吸引力，符合${platform}平台特点
+- 正文内容要${style}，有实用价值
+- 包含3-5个相关热门标签
+- 内容长度适中，适合${platform}平台
+- 如果是视频脚本，要包含开场、主体、结尾结构
+- 如果是产品测评，要包含优缺点分析
+
+请直接返回JSON格式的结果。`
+}
+
+// 获取内容类型
+const getContentType = () => {
+  const typeMapping = {
+    social_post: 'social',
+    article: 'article', 
+    video_script: 'tutorial',
+    product_review: 'marketing'
+  }
+  return typeMapping[selectedType.value?.id] || 'social'
+}
+
+// 解析生成的内容
+const parseGeneratedContent = (content) => {
+  try {
+    // 尝试解析JSON格式的响应
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      return {
+        title: parsed.title,
+        content: parsed.content,
+        hashtags: parsed.hashtags || []
+      }
+    }
+  } catch (e) {
+    console.warn('无法解析JSON格式，使用原始内容')
+  }
+  
+  // 如果无法解析JSON，尝试从文本中提取结构
+  const lines = content.split('\n').filter(line => line.trim())
+  const title = lines[0]?.replace(/^#+\s*/, '') || `${contentTheme.value}精选内容`
+  const contentText = lines.slice(1).join('\n')
+  
+  return {
+    title,
+    content: contentText,
+    hashtags: extractHashtagsFromText(contentText)
+  }
+}
+
+// 从文本中提取标签
+const extractHashtagsFromText = (text) => {
+  const hashtagRegex = /#([^\s#]+)/g
+  const matches = text.match(hashtagRegex) || []
+  return matches.slice(0, 5) // 最多5个标签
+}
+
+// 降级生成方案
+const fallbackGeneration = async () => {
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  
   generatedContent.value = {
     title: `${contentTheme.value} | ${targetPlatformName.value}爆款攻略`,
     content: generateContent(),
     hashtags: generateHashtags()
   }
   
+  generationProgress.value = 100
+  generationStatus.value = 'success'
   currentStep.value++
 }
 
